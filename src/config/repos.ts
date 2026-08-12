@@ -1,0 +1,17 @@
+import { Users } from "./entities/Users.ts";
+import { Projects } from "./entities/Projects.ts";
+import { Notifications } from "./entities/Notifications.ts";
+import { Comments } from "./entities/Comments.ts";
+import { ProjectMembers } from "./entities/ProjectMembers.ts";
+import { Issues } from "./entities/Issues.ts";
+import { AppDataSource } from "./db.ts";
+
+
+export const projectRepo = AppDataSource.getRepository(Projects);
+export const usersRepo = AppDataSource.getRepository(Users);
+export const notifyRepo = AppDataSource.getRepository(Notifications);
+export const commentsRepo = AppDataSource.getRepository(Comments);
+export const projectMemberRepo = AppDataSource.getRepository(ProjectMembers);
+export const issueRepo = AppDataSource.getRepository(Issues);
+
+
