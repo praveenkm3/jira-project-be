@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { registerService } from "../services/auth_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { loginService,refeshService} from "../services/auth_services.ts";
-
+import "dotenv/config"
 
 export async function register(
   req: Request,
@@ -36,11 +36,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const [access_decrypt, refresh_decrypt, user] = response;
 
     res.cookie("accessToken", access_decrypt, {
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refresh_decrypt, {
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 5 * 24 * 60 * 60 * 1000,
     });

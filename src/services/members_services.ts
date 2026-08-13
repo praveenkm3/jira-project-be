@@ -4,8 +4,7 @@ import { projectMemberRepo } from "../config/repos.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
 import { AppDataSource } from "../config/db.ts";
 import { Not } from "typeorm";
-
-
+import { Issues } from "../config/entities/Issues.ts";
 
 export async function addMembersToProjectService(
   data: string[],
@@ -38,7 +37,10 @@ export async function addMembersToProjectService(
       message: "Developers Not Added Into Project, or already added",
     };
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong");
   }
 }
 export async function deleteMembersFromProjectService(
@@ -62,35 +64,36 @@ export async function deleteMembersFromProjectService(
       message: "Member deleted from project",
     };
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong");
   }
 }
 export async function editProjectMembersService(
   data: string[],
   projectId: string,
-  userId:string
+  userId: string,
 ) {
-  const query= await AppDataSource.transaction(async (manager) => {
-
-
-const currentMembers = await manager.find(ProjectMembers, {
-  where: {
-    project: {
-      project_id: projectId,
-    },
-    user: {
-      id: Not(userId),
-    },
-  },
-  relations: {
-    user: true,
-  },
-  select: {
-    user: {
-      id: true,
-    },
-  },
-});
+  const query = await AppDataSource.transaction(async (manager) => {
+    const currentMembers = await manager.find(ProjectMembers, {
+      where: {
+        project: {
+          project_id: projectId,
+        },
+        user: {
+          id: Not(userId),
+        },
+      },
+      relations: {
+        user: true,
+      },
+      select: {
+        user: {
+          id: true,
+        },
+      },
+    });
 
     const currentUserIds = currentMembers.map((member) => member.user.id);
 
@@ -102,6 +105,13 @@ const currentMembers = await manager.find(ProjectMembers, {
     const usersToAdd = newUserIds.filter((id) => !currentUserIds.includes(id));
 
     if (usersToRemove.length > 0) {
+      await manager
+        .createQueryBuilder()
+        .update(Issues)
+        .set({ assignee: null })
+        .where("project_id = :projectId", { projectId })
+        .andWhere("assignee_id IN (:...userIds)", { userIds: usersToRemove })
+        .execute();
       await manager
         .createQueryBuilder()
         .delete()

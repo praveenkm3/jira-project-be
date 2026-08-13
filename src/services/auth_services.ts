@@ -35,7 +35,10 @@ export async function loginService(data: loginType) {
       throw new AppError(401, "Incorrect Password");
     }
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "Something went wrong ,Unable to procee login");
   }
 }
 export async function registerService(data: registerType) {

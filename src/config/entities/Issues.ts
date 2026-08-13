@@ -80,7 +80,7 @@ export class Issues {
     onDelete: "SET NULL",
   })
   @JoinColumn({ name: "assignee_id" })
-  assignee!: Users;
+  assignee!: Users | null;
 
   @ManyToOne(() => Users, {
     nullable: false,

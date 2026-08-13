@@ -129,7 +129,10 @@ export async function createIssueService(
     });
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at Issues");
   }
 }
 export async function editIssueService(
@@ -243,7 +246,10 @@ export async function editIssueService(
     });
     return result;
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at editing Issue");
   }
 }
 export async function getIssueService(userId: string) {
@@ -305,6 +311,9 @@ export async function changeIssueStatusService(
     });
     return query;
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at change Issue status");
   }
 }

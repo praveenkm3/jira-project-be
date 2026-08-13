@@ -46,7 +46,10 @@ export async function addCommentService(
       message: "Comment created successfully",
     };
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at Comments");
   }
 }
 export async function editCommentService(
@@ -96,7 +99,10 @@ export async function editCommentService(
     });
     return query;
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at editing comment");
   }
 }
 export async function deleteCommentService(
@@ -143,6 +149,9 @@ export async function deleteCommentService(
 
     return query;
   } catch (error) {
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Something went wrong at deleting comment");
   }
 }
