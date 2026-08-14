@@ -3,7 +3,7 @@ import { unHashPassword } from "../utils/hashPassword.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { generateAccessToken, generateRefreshToken, validateAccessToken, validateRefreshToken } from "../utils/tokens.ts";
 import type { tokenObject } from "../types/auth.types.ts";
-import { decryptToken, encryptToken } from "../utils/hashCookie.ts";
+import { encryptToken } from "../utils/hashCookie.ts";
 import { usersRepo } from "../config/repos.ts";
 import { hashPassword } from "../utils/hashPassword.ts";
 import { UserRole } from "../config/entities/Users.ts";
@@ -18,7 +18,7 @@ export async function loginService(data: loginType) {
       .where("email = :email", { email })
       .execute();
 
-    if (checkUser.length < 0) {
+    if (checkUser.length <= 0) {
       throw new AppError(400, "Invalid Email");
     }
     const checkPassword = await unHashPassword(password, checkUser[0].password);
@@ -74,24 +74,5 @@ export async function registerService(data: registerType) {
     };
   } catch (error) {
     throw new AppError(400, "Registration Failed");
-  }
-}
-export async function refeshService(accessToken:string,refreshToken:string) {
-  const accessTokenDecrypt = decryptToken(accessToken);
-  const verifyAccess = validateAccessToken(accessTokenDecrypt);
-  if (verifyAccess[0]) {
-    return verifyAccess[1];
-  } else {
-    const refreshTokenDecrypt = decryptToken(refreshToken);
-    const verifyRefresh = validateRefreshToken(refreshTokenDecrypt);
-    if (verifyRefresh[0]) {
-      const payload = verifyRefresh[1];
-      const{email,role,id}=payload as tokenObject;
-      const newAccess = await generateAccessToken({email,role,id});
-      const accessTokenEncrypt = encryptToken(newAccess);
-      return accessTokenEncrypt;
-    } else {
-      throw new AppError(404,"Tokens Expired");
-    }
   }
 }

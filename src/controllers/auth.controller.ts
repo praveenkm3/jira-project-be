@@ -1,8 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { registerService } from "../services/auth_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { loginService,refeshService} from "../services/auth_services.ts";
-import "dotenv/config"
+import { loginService } from "../services/auth_services.ts";
+import "dotenv/config";
+import { decryptToken, encryptToken } from "../utils/hashCookie.ts";
+import { generateAccessToken, validateAccessToken, validateRefreshToken } from "../utils/tokens.ts";
+import type { tokenObject } from "../types/auth.types.ts";
 
 export async function register(
   req: Request,
@@ -36,13 +39,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const [access_decrypt, refresh_decrypt, user] = response;
 
     res.cookie("accessToken", access_decrypt, {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refresh_decrypt, {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 5 * 24 * 60 * 60 * 1000,
     });
@@ -60,13 +63,35 @@ export async function logout(req: Request, res: Response) {
   });
   return res.status(200).json({ message: "Logout succussfully" });
 }
-export async function refresh(req: Request, res: Response,next: NextFunction) {
-  const accessToken:string = req?.cookies?.accessToken;
-  const refreshToken:string = req?.cookies?.refreshToken;
-  const newToken=await refeshService(accessToken,refreshToken);
-  res.cookie("accessToken", newToken, {
+
+export async function refresh(req: Request, res: Response) {
+  // console.log(req.user);
+  const accessToken = req?.cookies?.accessToken;
+  const refreshToken = req?.cookies?.refreshToken;
+  const accessTokenDecrypt=decryptToken(accessToken);
+  const verifyAccess = validateAccessToken(accessTokenDecrypt);
+  if (verifyAccess[0]) {
+    // console.log("Access token not expired");
+    return res.status(201).json(verifyAccess[1]);
+  } else {
+    // console.log("Access token expired");
+  const refreshTokenDecrypt=decryptToken(refreshToken);
+    const verifyRefresh = validateRefreshToken(refreshTokenDecrypt);
+    if (verifyRefresh[0]) {
+      // console.log("refresh token not expired");
+
+      const payload = verifyRefresh[1];
+      const newAccess = await generateAccessToken(payload as tokenObject);
+      const accessTokenEncrypt = encryptToken(newAccess);
+      res.cookie("accessToken", accessTokenEncrypt, {
         httpOnly: true,
         maxAge: 15 * 60 * 1000,
       });
-  return res.status(200).json({message:"Access token expired ,new token created"});
+      // console.log("new access token created");
+      return res.status(201).json(payload);
+    } else {
+      // console.log("Tokens expired");
+      return res.status(401).json({ message: "Tokens Expired" });
+    }
+  }
 }

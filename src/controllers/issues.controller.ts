@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { createIssueService,getIssueService,editIssueService ,changeIssueStatusService} from "../services/issues_services.ts";
+import { createIssueService,getIssueService,editIssueService ,changeIssueStatusService,getProjectIssueService,getProjectMembersService} from "../services/issues_services.ts";
 import type{ issueCreatetype } from "../types/issues.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 
@@ -7,8 +7,9 @@ import { AppError } from "../middlewares/errorMiddleware.ts";
 export const createIssue=async (req:Request,res:Response,next:NextFunction)=>{
     try {
         const data:issueCreatetype=req.body;
+        const {pid}=req.params;
         const userId=req?.user?.id as string;
-        const response=await createIssueService(data,userId);
+        const response=await createIssueService(data,userId,pid as string);
         return res.status(201).json(response);
     } catch (error) {
         next(error);
@@ -17,6 +18,7 @@ export const createIssue=async (req:Request,res:Response,next:NextFunction)=>{
 export const getIssues=async (req:Request,res:Response,next:NextFunction)=>{
     try {
         const userId=req?.user?.id as string; 
+        const role=req?.user?.role as string; 
         const response=await getIssueService(userId);
         return res.status(200).json(response);
     } catch (error) {
@@ -47,6 +49,27 @@ export const changeIssueStatus=async (req:Request,res:Response,next:NextFunction
         }
         const response=await changeIssueStatusService(userId,issueId as string,statusValue);
         return res.status(201).json(response);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getProjectIssues=async (req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const {pid}=req.params;
+        const response=await getProjectIssueService(pid as string);
+        return res.status(200).json(response);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getProjectMembers=async (req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const {pid}=req.params;
+        const userId=req.user?.id as string;
+        const response=await getProjectMembersService(pid as string,userId);
+        return res.status(200).json(response);
     } catch (error) {
         next(error);
     }

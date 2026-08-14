@@ -31,3 +31,16 @@ export async function getSpecificUsers(
     next(error);
   }
 }
+export async function getProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const userId=req.user?.id as string;
+    const specificUser=await getSpecificUserService (userId);
+    return res.status(200).json(specificUser);
+  } catch (error) {
+    next(error);
+  }
+}

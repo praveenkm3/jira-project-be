@@ -1,47 +1,51 @@
 import { AppDataSource } from "../config/db.ts";
 import type { issueCreatetype } from "../types/issues.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { issueRepo } from "../config/repos.ts";
+import { issueRepo, projectRepo } from "../config/repos.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
 import { Issues } from "../config/entities/Issues.ts";
 import { Projects } from "../config/entities/Projects.ts";
 import { Notifications } from "../config/entities/Notifications.ts";
 import { Users } from "../config/entities/Users.ts";
+
 export type issueUpdateType = Partial<issueCreatetype>;
+
+
 
 export async function createIssueService(
   data: issueCreatetype,
   userId: string,
+  projectId:string
 ) {
   try {
     const {
-      projectId,
       title,
       description,
-      issueType,
+      type,
       priority,
-      assigneeId,
-      dueDate,
-      issueStatus,
+      assignee_id,
+      due_date,
+      status,
     } = data;
     if (
       !projectId ||
       !title ||
-      !issueType ||
-      !assigneeId ||
+      !type ||
+      !assignee_id ||
       !priority ||
-      !issueStatus
+      !status ||
+      !due_date
     ) {
       throw new AppError(400, "Issue details required");
     }
-    if (userId === assigneeId) {
+    if (userId === assignee_id) {
       throw new AppError(400, "Reporter and assignee cannot be the same user");
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const due = new Date(dueDate);
+    const due = new Date(due_date);
     due.setHours(0, 0, 0, 0);
 
     if (due < today) {
@@ -67,7 +71,7 @@ export async function createIssueService(
           project_id: projectId,
         },
         user: {
-          id: assigneeId,
+          id: assignee_id,
         },
       });
       if (!check2) {
@@ -91,16 +95,16 @@ export async function createIssueService(
           project_id: projectId,
         },
         assignee: {
-          id: assigneeId,
+          id: assignee_id,
         },
         reporter: {
           id: userId,
         },
-        issue_status: issueStatus,
+        issue_status: status,
         issue_priority: priority,
-        issue_type: issueType,
+        issue_type: type,
         issue_title: title,
-        issue_due_date: dueDate,
+        issue_due_date: due_date,
         issue_description: description,
         issue_number: issueNumber,
       });
@@ -113,7 +117,7 @@ export async function createIssueService(
           id: userId,
         },
         reciever: {
-          id: assigneeId,
+          id: assignee_id,
         },
         issuse_id: {
           issue_id: issueCreation.issue_id,
@@ -144,21 +148,21 @@ export async function editIssueService(
     const {
       title,
       description,
-      issueType,
+      type,
       priority,
-      assigneeId,
-      dueDate,
-      issueStatus,
+      assignee_id,
+      due_date,
+      status,
     } = data;
 
-    if (assigneeId && userId === assigneeId) {
+    if (assignee_id && userId === assignee_id) {
       throw new AppError(400, "Reporter and assignee cannot be the same user");
     }
 
-    if (dueDate !== undefined) {
+    if (due_date !== undefined) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const due = new Date(dueDate);
+      const due = new Date(due_date);
       due.setHours(0, 0, 0, 0);
       if (due < today) {
         throw new AppError(400, "Due date cannot be in the past");
@@ -189,10 +193,10 @@ export async function editIssueService(
       const projectId = issue.project.project_id;
       const previousAssigneeId = issue.assignee?.id;
 
-      if (assigneeId) {
+      if (assignee_id) {
         const check1 = await manager.existsBy(ProjectMembers, {
           project: { project_id: projectId },
-          user: { id: assigneeId },
+          user: { id: assignee_id },
         });
         if (!check1) {
           throw new AppError(400, "Assignee does not belong to this project");
@@ -210,12 +214,12 @@ export async function editIssueService(
       const updates: Partial<Issues> = {};
       if (title !== undefined) updates.issue_title = title;
       if (description !== undefined) updates.issue_description = description;
-      if (issueType !== undefined) updates.issue_type = issueType;
+      if (type !== undefined) updates.issue_type = type as string;
       if (priority !== undefined) updates.issue_priority = priority;
-      if (issueStatus !== undefined) updates.issue_status = issueStatus;
-      if (dueDate !== undefined) updates.issue_due_date = dueDate;
-      if (assigneeId !== undefined) {
-        updates.assignee = { id: assigneeId } as Users;
+      if (status !== undefined) updates.issue_status = status as string;
+      if (due_date !== undefined) updates.issue_due_date = due_date as Date;
+      if (assignee_id !== undefined) {
+        updates.assignee = { id: assignee_id } as Users;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -226,12 +230,12 @@ export async function editIssueService(
       await manager.save(Issues, issue);
 
       const assigneeChanged =
-        assigneeId && previousAssigneeId && previousAssigneeId !== assigneeId;
+        assignee_id && previousAssigneeId && previousAssigneeId !== assignee_id;
 
       if (assigneeChanged) {
         const notificationCreation = manager.create(Notifications, {
           created_by: { id: userId },
-          reciever: { id: assigneeId },
+          reciever: { id: assignee_id },
           issuse_id: { issue_id: issue.issue_id },
           is_read: false,
           message: `You have been assigned to ticket, ${title ?? issue.issue_title}`,
@@ -260,6 +264,14 @@ export async function getIssueService(userId: string) {
           id: true,
           email: true,
         },
+        assignee: {
+          id: true,
+          email: true,
+        },
+        project: {
+          project_id: true,
+          project_name: true,
+        },
       },
       where: {
         assignee: {
@@ -268,9 +280,23 @@ export async function getIssueService(userId: string) {
       },
       relations: {
         reporter: true,
+        assignee: true,
+        project: true,
       },
     });
-    return result;
+
+    const grouped = {
+      "Open": [] as typeof result,
+      "In Progress": [] as typeof result,
+      "Done": [] as typeof result,
+    };
+    for (const issue of result) {
+      if (issue.issue_status in grouped) {
+        grouped[issue.issue_status as keyof typeof grouped].push(issue);
+      }
+    }
+
+    return grouped;
   } catch (error) {
     throw new AppError(400, "Issue fetching failed");
   }
@@ -316,4 +342,60 @@ export async function changeIssueStatusService(
     }
     throw new AppError(500, "DB Error ,Something went wrong at change Issue status");
   }
+}
+export async function getProjectIssueService(projectId: string) {
+  try {
+    const result = await issueRepo.find({
+      where: {
+        project: {
+          project_id: projectId,
+        },
+      },
+      relations: {
+        reporter: true,
+        assignee: true,
+      },
+      select: {
+        issue_id: true,
+        issue_number: true,
+        issue_title: true,
+        issue_description: true,
+        issue_type: true,
+        issue_priority: true,
+        issue_status: true,
+        issue_due_date: true,
+        createdAt: true,
+        updatedAt: true,
+
+        reporter: {
+          id: true,
+          email: true,
+        },
+
+        assignee: {
+          id: true,
+          email: true,
+        },
+      },
+    });
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+export async function getProjectMembersService(projectId: string,userId:string) {
+  return projectRepo
+    .createQueryBuilder("project")
+    .innerJoin("project.members", "members")
+    .innerJoin("members.user", "user")
+    .where("project.project_id = :pid", { pid: projectId })
+    .andWhere("user.role != :role", { role: "admin" })
+    .andWhere("user.id != :userId", { userId })
+    .select([
+      "user.id AS id",
+      "user.name AS name",
+      "user.email AS email",
+    ])
+    .getRawMany();
 }
