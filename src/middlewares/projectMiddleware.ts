@@ -6,24 +6,36 @@ export async function checkProjectAdmin(
   res: Response,
   next: NextFunction,
 ) {
-  const user = req?.user;
-  if(!user){
-    throw new AppError(403,"Unauthorized to create or modify project");
-  }
-  if(user?.role !== 'admin'){
-    throw new AppError(403,"developers are not allowed to modify project");
-  }
-  const { pid } = req?.params;
+  const user = req.user;
 
-  const project = await projectRepo.existsBy({
-    project_id: pid as string,
-    created_by: {
-      id: user.id,
-    },
-  });
+  if (!user) {
+    throw new AppError(401, "Unauthorized");
+  }
+
+  if (user.role !== "admin") {
+    throw new AppError(
+      403,
+      "Developers are not allowed to modify project",
+    );
+  }
+
+  const { pid } = req.params;
+
+  const project = await projectRepo
+  .createQueryBuilder("project")
+  .innerJoin("project.members", "member")
+  .innerJoin("member.user", "memberUser")
+  .where("project.project_id = :pid", { pid })
+  .andWhere("memberUser.id = :userId", { userId: user.id })
+  .andWhere("memberUser.role = :role", { role: "admin" })
+  .getOne();
 
   if (!project) {
-    throw new AppError(404,"Project not found , or You are not allowed to this project");
+    throw new AppError(
+      404,
+      "Project not found, or you are not an admin of this project",
+    );
   }
+
   next();
 }

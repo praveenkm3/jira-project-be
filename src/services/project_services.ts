@@ -60,7 +60,7 @@ export const deleteProjectService = async (
     .delete()
     .from(Projects)
     .where("project_id = :projectId", { projectId })
-    .andWhere("created_by = :userId", { userId })
+    // .andWhere("created_by = :userId", { userId })
     .execute();
 
   if (result.affected === 0) {
@@ -106,7 +106,6 @@ export const editProjectService = async (
     .update(Projects)
     .set(updateFields)
     .where("project_id = :projectId", { projectId })
-    .andWhere("created_by = :userId", { userId })
     .execute();
 
   if (result.affected === 0) {
@@ -127,7 +126,7 @@ export const specificProjectService = async (
   role: string,
 ) => {
   try {
-    let query = await projectRepo
+    const query = projectRepo
       .createQueryBuilder("project")
       .leftJoinAndSelect("project.created_by", "creator")
       .leftJoinAndSelect("project.members", "member")
@@ -151,28 +150,38 @@ export const specificProjectService = async (
         "memberUser.email",
         "memberUser.role",
       ])
-      .where("project.project_id = :projectId", { projectId });
+      .where("project.project_id = :projectId", {
+        projectId,
+      });
+
     if (role === "admin") {
-      query.andWhere("creator.id = :userId", { userId });
+      query.andWhere(
+        `(creator.id = :userId OR memberUser.id = :userId)`,
+        {
+          userId,
+        },
+      );
     } else {
-      query.andWhere("memberUser.id = :userId", { userId });
+      query.andWhere("memberUser.id = :userId", {
+        userId,
+      });
     }
 
-    let result: Promise<Projects | null> = query.getOne();
-    return result;
+    return await query.getOne();
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
     }
+
     throw new AppError(
       500,
-      "DB Error ,Something went wrong at get project details",
+      "DB Error, Something went wrong at get project details",
     );
   }
 };
 export const allProjectsService = async (userId: string, role: string) => {
   try {
-    let query = await projectRepo
+    const query = projectRepo
       .createQueryBuilder("project")
       .leftJoinAndSelect("project.created_by", "creator")
       .leftJoinAndSelect("project.members", "member")
@@ -195,20 +204,28 @@ export const allProjectsService = async (userId: string, role: string) => {
         "memberUser.email",
         "memberUser.role",
       ]);
+
+    const memberSubQuery = query
+      .subQuery()
+      .select("pm.project_id")
+      .from(ProjectMembers, "pm")
+      .where("pm.member_id = :userId")
+      .getQuery();
+
     if (role === "admin") {
-      query.where("creator.id = :userId", { userId });
+      query.where(
+        `(memberUser.id = :userId OR project.project_id IN ${memberSubQuery})`,
+        { userId }
+      );
     } else {
-      query.where("memberUser.id= :userId", { userId });
+      query.where(
+        `project.project_id IN ${memberSubQuery}`,
+        { userId }
+      );
     }
-    const result: Promise<Projects[] | ProjectMembers[]> = query.getMany();
-    return result;
+
+    return await query.getMany();
   } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-    throw new AppError(
-      500,
-      "DB Error ,Something went wrong at fetching all projects",
-    );
+    throw error;
   }
 };

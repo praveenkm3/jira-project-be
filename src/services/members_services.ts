@@ -71,80 +71,50 @@ export async function deleteMembersFromProjectService(
   }
 }
 export async function editProjectMembersService(
-  data: string[],
+  userIds: string[],
   projectId: string,
-  userId: string,
+  userId:string
 ) {
-  const query = await AppDataSource.transaction(async (manager) => {
-    const currentMembers = await manager.find(ProjectMembers, {
-      where: {
-        project: {
-          project_id: projectId,
-        },
-        user: {
-          id: Not(userId),
-        },
-      },
-      relations: {
-        user: true,
-      },
-      select: {
-        user: {
-          id: true,
-        },
-      },
-    });
-
-    const currentUserIds = currentMembers.map((member) => member.user.id);
-
-    const newUserIds = data;
-    const usersToRemove = currentUserIds.filter(
-      (id) => !newUserIds.includes(id),
-    );
-
-    const usersToAdd = newUserIds.filter((id) => !currentUserIds.includes(id));
-
-    if (usersToRemove.length > 0) {
-      await manager
-        .createQueryBuilder()
-        .update(Issues)
-        .set({ assignee: null })
-        .where("project_id = :projectId", { projectId })
-        .andWhere("assignee_id IN (:...userIds)", { userIds: usersToRemove })
-        .execute();
-      await manager
-        .createQueryBuilder()
-        .delete()
-        .from(ProjectMembers)
-        .where("project_id = :projectId", { projectId })
-        .andWhere("member_id IN (:...userIds)", {
-          userIds: usersToRemove,
-        })
-        .execute();
+  try {
+    const usersToRemove = userIds.filter(
+        (id) => id !== userId
+      );
+      if (!usersToRemove.length) {
+        return {
+          updated: false,
+          message: "No members selected",
+        };
+      }
+    const result= await AppDataSource.transaction(async (manager) => {
+    if (!usersToRemove.length) {
+      return {
+        updated: false,
+        message: "No members selected",
+      };
     }
 
-    if (usersToAdd.length > 0) {
-      const members = usersToAdd.map((userId) => ({
-        project: {
-          project_id: projectId,
-        },
-        user: {
-          id: userId,
-        },
-      }));
+    await manager
+      .createQueryBuilder()
+      .update(Issues)
+      .set({ assignee: null })
+      .where("project_id = :projectId", { projectId })
+      .andWhere("assignee_id IN (:...usersToRemove)", { usersToRemove })
+      .execute();
 
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(ProjectMembers)
-        .values(members)
-        .execute();
-    }
+    await manager
+      .createQueryBuilder()
+      .delete()
+      .from(ProjectMembers)
+      .where("project_id = :projectId", { projectId })
+      .andWhere("member_id IN (:...usersToRemove)", { usersToRemove })
+      .execute();
 
     return {
       updated: true,
-      message: "Project members updated successfully",
+      message: "Project members removed successfully",
     };
   });
-  return query;
+  } catch (error) {
+    throw new AppError(500,"DB error, while removing project members")
+  }
 }

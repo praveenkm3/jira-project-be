@@ -10,8 +10,7 @@ export const getUsersService = async (userId: string) => {
     const result:usersReturnType[]=await usersRepo
     .createQueryBuilder("user")
     .select(["user.id","user.name","user.email","user.role"])
-    .where("user.role != :role",{role:"admin"})
-    .andWhere("user.id != :uid",{uid:userId})
+    .where("user.id != :uid",{uid:userId})
     .getMany();
     return result;
   } catch (error) {
