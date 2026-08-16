@@ -25,7 +25,6 @@ export async function loginService(data: loginType) {
 
     if (checkPassword) {
       const { id, email, role }: tokenObject = checkUser[0];
-      console.log(id, email, role);
       const access_token:string = generateAccessToken({ email, id, role });
       const refresh_token:string = generateRefreshToken({ email, id, role });
       const access_decrypt:string = encryptToken(access_token);

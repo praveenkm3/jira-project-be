@@ -5,7 +5,8 @@ import {
   editProjectService,
   deleteProjectService,
   specificProjectService,
-  allProjectsService
+  allProjectsService,
+  myProjectsForSearchService
 } from "../services/project_services.ts";
 
 export async function createProject(
@@ -108,6 +109,19 @@ export async function getAllProjects(
   try {
     const user = req.user;
     const response = await allProjectsService(user?.id as string,user?.role as string);
+    return res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+}
+export async function getAllProjectsForSearch(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    const response = await myProjectsForSearchService(user?.id as string);
     return res.status(201).json(response);
   } catch (error) {
     next(error);

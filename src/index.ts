@@ -36,7 +36,7 @@ app.use('/api/project',projectRouter);
 app.use('/api/project',memberRouter);
 app.use('/api/issues',issueRouter);
 app.use('/api/',userRouter);
-app.use('/api/issues',commentRouter); 
+app.use('/api/comments',commentRouter); 
 app.use('/api/notifications',notifyRouter)
 app.use(errorHandler);
 try {

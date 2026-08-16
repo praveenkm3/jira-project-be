@@ -155,3 +155,37 @@ export async function deleteCommentService(
     throw new AppError(500, "DB Error ,Something went wrong at deleting comment");
   }
 }
+export async function getCommentService(issueId: string) {
+  try {
+    const comments = await AppDataSource
+      .getRepository(Comments)
+      .createQueryBuilder("comment")
+      .leftJoinAndSelect("comment.created", "creator")
+      .where("comment.issue_id = :issueId", { issueId })
+      .orderBy("comment.created_at", "ASC")
+      .getMany();
+
+    return comments.map((comment) => ({
+      comment_id: comment.comment_id,
+      comment: comment.comment,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+
+      creator: {
+        id: comment.created.id,
+        name: comment.created.name,
+        email: comment.created.email,
+      },
+    }));
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      500,
+      "DB Error, Something went wrong while fetching comments",
+    );
+  }
+}
+  

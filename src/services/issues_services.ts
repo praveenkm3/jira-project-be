@@ -399,3 +399,152 @@ export async function getProjectMembersService(projectId: string,userId:string) 
     ])
     .getRawMany();
 }
+export async function deleteIssueService(
+  issueId: string,
+  userId: string,
+) {
+  try {
+    const result = await AppDataSource.transaction(async (manager) => {
+      const issue = await manager
+        .getRepository(Issues)
+        .createQueryBuilder("issue")
+        .setLock("pessimistic_write")
+        .where("issue.issue_id = :issueId", { issueId })
+        .getOne();
+
+      if (!issue) {
+        throw new AppError(404, "Issue not found");
+      }
+
+      const issueWithRelations = await manager.findOne(Issues, {
+        where: {
+          issue_id: issueId,
+        },
+        relations: {
+          project: true,
+          reporter: true,
+        },
+      });
+
+      if (!issueWithRelations) {
+        throw new AppError(404, "Issue not found");
+      }
+
+      const projectId = issueWithRelations.project.project_id;
+      const reporterId = issueWithRelations.reporter.id;
+
+      const isProjectMember = await manager.existsBy(ProjectMembers, {
+        project: {
+          project_id: projectId,
+        },
+        user: {
+          id: userId,
+        },
+      });
+
+      if (!isProjectMember) {
+        throw new AppError(
+          403,
+          "You are not a member of this project",
+        );
+      }
+
+      const user = await manager.findOne(Users, {
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!user) {
+        throw new AppError(404, "User not found");
+      }
+      const isAdmin = user.role === "admin";
+      const isReporter = reporterId === userId;
+
+      if (!isAdmin && !isReporter) {
+        throw new AppError(
+          403,
+          "Only the issue creator or an administrator can delete this issue",
+        );
+      }
+
+      await manager.remove(Issues, issueWithRelations);
+
+      return {
+        issueDeleted: true,
+        message: "Issue deleted successfully",
+      };
+    });
+
+    return result;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      500,
+      "DB Error, Something went wrong while deleting issue",
+    );
+  }
+}
+export async function getIssueByIdService(issueId: string) {
+  try {
+    const issue = await AppDataSource.getRepository(Issues).findOne({
+      where: {
+        issue_id: issueId,
+      },
+      relations: {
+        project: true,
+        reporter: true,
+        assignee: true,
+      },
+    });
+
+    if (!issue) {
+      throw new AppError(404, "Issue not found");
+    }
+
+    return {
+      issue_id: issue.issue_id,
+      issue_number: issue.issue_number,
+      issue_title: issue.issue_title,
+      issue_description: issue.issue_description,
+      issue_type: issue.issue_type,
+      issue_priority: issue.issue_priority,
+      issue_status: issue.issue_status,
+      issue_due_date: issue.issue_due_date,
+      createdAt: issue.createdAt,
+      updatedAt: issue.updatedAt,
+
+      project: {
+        project_id: issue.project.project_id,
+        project_name: issue.project.project_name,
+        project_key: issue.project.project_key,
+      },
+
+      reporter: {
+        id: issue.reporter.id,
+        name: issue.reporter.name,
+        email: issue.reporter.email,
+      },
+
+      assignee: issue.assignee
+        ? {
+            id: issue.assignee.id,
+            name: issue.assignee.name,
+            email: issue.assignee.email,
+          }
+        : null,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      500,
+      "DB Error, Something went wrong while fetching issue",
+    );
+  }
+}

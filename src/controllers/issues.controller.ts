@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { createIssueService,getIssueService,editIssueService ,changeIssueStatusService,getProjectIssueService,getProjectMembersService} from "../services/issues_services.ts";
+import {deleteIssueService, createIssueService,getIssueService,editIssueService ,changeIssueStatusService,getProjectIssueService,getProjectMembersService, getIssueByIdService} from "../services/issues_services.ts";
 import type{ issueCreatetype } from "../types/issues.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 
@@ -38,7 +38,7 @@ export const editIssue=async (req:Request,res:Response,next:NextFunction)=>{
 }
 export const changeIssueStatus=async (req:Request,res:Response,next:NextFunction)=>{
     try {
-        const {statusValue}=req.body;
+        const {status:statusValue}=req.body;
         const {issueId}=req?.params;
         const userId=req.user?.id as string;
         if(!issueId){
@@ -73,4 +73,33 @@ export const getProjectMembers=async (req:Request,res:Response,next:NextFunction
     } catch (error) {
         next(error);
     }
+}
+export const deleteIssue=async (req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const userId=req?.user?.id as string;
+        const {issueId}=req?.params;
+        const response=await deleteIssueService(issueId as string,userId);
+        return res.status(201).json(response);
+    } catch (error) {
+        next(error);
+    }
+}
+export async function getSpecificIssue(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { issueId } = req.params;
+
+    if (!issueId) {
+      throw new AppError(400, "Issue ID is required");
+    }
+
+    const issue = await getIssueByIdService(issueId as string);
+
+    res.status(200).json(issue);
+  } catch (error) {
+    next(error);
+  }
 }

@@ -226,6 +226,22 @@ export const allProjectsService = async (userId: string, role: string) => {
 
     return await query.getMany();
   } catch (error) {
-    throw error;
+    throw new AppError(500,"Fetching projects failed");
   }
 };
+export const myProjectsForSearchService = async (userId: string)=>{
+ try {
+    return await projectRepo
+      .createQueryBuilder("project")
+      .innerJoin("project.members", "member")
+      .select([
+        "project.project_id",
+        "project.project_name",
+      ])
+      .where("member.member_id = :userId", { userId })
+      .orderBy("project.project_name", "ASC")
+      .getMany();
+  } catch (error) {
+    throw new AppError(500,"fetching failed for user projects ");
+  }
+}

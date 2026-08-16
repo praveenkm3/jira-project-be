@@ -4,8 +4,6 @@ import crypto from "crypto";
 const CookieSecretKey = process.env.CookieSecretKey;
 const ALGORITHM = process.env.ALGORITHM;
 
-// console.log(CookieSecretKey,ALGORITHM)
-
 export function encryptToken(token: string) {
   try {
     const iv = crypto.randomBytes(12);

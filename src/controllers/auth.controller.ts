@@ -65,20 +65,16 @@ export async function logout(req: Request, res: Response) {
 }
 
 export async function refresh(req: Request, res: Response) {
-  // console.log(req.user);
   const accessToken = req?.cookies?.accessToken;
   const refreshToken = req?.cookies?.refreshToken;
   const accessTokenDecrypt=decryptToken(accessToken);
   const verifyAccess = validateAccessToken(accessTokenDecrypt);
   if (verifyAccess[0]) {
-    // console.log("Access token not expired");
     return res.status(201).json(verifyAccess[1]);
   } else {
-    // console.log("Access token expired");
   const refreshTokenDecrypt=decryptToken(refreshToken);
     const verifyRefresh = validateRefreshToken(refreshTokenDecrypt);
     if (verifyRefresh[0]) {
-      // console.log("refresh token not expired");
 
       const payload = verifyRefresh[1];
       const newAccess = await generateAccessToken(payload as tokenObject);
@@ -87,10 +83,9 @@ export async function refresh(req: Request, res: Response) {
         httpOnly: true,
         maxAge: 15 * 60 * 1000,
       });
-      // console.log("new access token created");
+      
       return res.status(201).json(payload);
     } else {
-      // console.log("Tokens expired");
       return res.status(401).json({ message: "Tokens Expired" });
     }
   }
