@@ -12,6 +12,7 @@ import issueRouter from "./routes/issue.routes.ts";
 import userRouter from "./routes/user.routes.ts";
 import commentRouter from "./routes/comment.routes.ts";
 import notifyRouter from "./routes/notifications.routes.ts";
+import boardRouter from "./routes/dashboard.routes.ts";
 import { refresh } from "./controllers/auth.controller.ts";
 
 const ALLOWED_ORIGIN=process.env.ALLOWED_ORIGIN
@@ -38,6 +39,7 @@ app.use('/api/issues',issueRouter);
 app.use('/api/',userRouter);
 app.use('/api/comments',commentRouter); 
 app.use('/api/notifications',notifyRouter)
+app.use('/api/boards',boardRouter)
 app.use(errorHandler);
 try {
     await AppDataSource.initialize();
