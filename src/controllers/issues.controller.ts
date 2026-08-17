@@ -18,8 +18,8 @@ export const createIssue=async (req:Request,res:Response,next:NextFunction)=>{
 export const getIssues=async (req:Request,res:Response,next:NextFunction)=>{
     try {
         const userId=req?.user?.id as string; 
-        const role=req?.user?.role as string; 
-        const response=await getIssueService(userId);
+        const {search=""}=req.params;
+        const response=await getIssueService(userId,search as string);
         return res.status(200).json(response);
     } catch (error) {
         next(error);

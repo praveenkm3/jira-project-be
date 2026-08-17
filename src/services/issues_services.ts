@@ -7,15 +7,14 @@ import { Issues } from "../config/entities/Issues.ts";
 import { Projects } from "../config/entities/Projects.ts";
 import { Notifications } from "../config/entities/Notifications.ts";
 import { Users } from "../config/entities/Users.ts";
+import { ILike } from "typeorm";
 
 export type issueUpdateType = Partial<issueCreatetype>;
-
-
 
 export async function createIssueService(
   data: issueCreatetype,
   userId: string,
-  projectId:string
+  projectId: string,
 ) {
   try {
     const {
@@ -256,8 +255,9 @@ export async function editIssueService(
     throw new AppError(500, "DB Error ,Something went wrong at editing Issue");
   }
 }
-export async function getIssueService(userId: string) {
+export async function getIssueService(userId: string, search: string) {
   try {
+    const searchValue = search.trim();
     const result = await issueRepo.find({
       select: {
         reporter: {
@@ -277,6 +277,11 @@ export async function getIssueService(userId: string) {
         assignee: {
           id: userId,
         },
+        ...(searchValue
+          ? {
+              issue_title: ILike(`%${searchValue}%`),
+            }
+          : {}),
       },
       relations: {
         reporter: true,
@@ -286,9 +291,9 @@ export async function getIssueService(userId: string) {
     });
 
     const grouped = {
-      "Open": [] as typeof result,
+      'Open': [] as typeof result,
       "In Progress": [] as typeof result,
-      "Done": [] as typeof result,
+      'Done': [] as typeof result,
     };
     for (const issue of result) {
       if (issue.issue_status in grouped) {
@@ -330,17 +335,20 @@ export async function changeIssueStatusService(
       if (updateIssue.affected === 0) {
         throw new AppError(404, "Issue not found");
       }
-      return ({
-        statusChanged:true,
-        message:"Status changed Successfully"
-      })
+      return {
+        statusChanged: true,
+        message: "Status changed Successfully",
+      };
     });
     return query;
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
     }
-    throw new AppError(500, "DB Error ,Something went wrong at change Issue status");
+    throw new AppError(
+      500,
+      "DB Error ,Something went wrong at change Issue status",
+    );
   }
 }
 export async function getProjectIssueService(projectId: string) {
@@ -384,7 +392,10 @@ export async function getProjectIssueService(projectId: string) {
     throw error;
   }
 }
-export async function getProjectMembersService(projectId: string,userId:string) {
+export async function getProjectMembersService(
+  projectId: string,
+  userId: string,
+) {
   return projectRepo
     .createQueryBuilder("project")
     .innerJoin("project.members", "members")
@@ -392,17 +403,10 @@ export async function getProjectMembersService(projectId: string,userId:string) 
     .where("project.project_id = :pid", { pid: projectId })
     .andWhere("user.role != :role", { role: "admin" })
     .andWhere("user.id != :userId", { userId })
-    .select([
-      "user.id AS id",
-      "user.name AS name",
-      "user.email AS email",
-    ])
+    .select(["user.id AS id", "user.name AS name", "user.email AS email"])
     .getRawMany();
 }
-export async function deleteIssueService(
-  issueId: string,
-  userId: string,
-) {
+export async function deleteIssueService(issueId: string, userId: string) {
   try {
     const result = await AppDataSource.transaction(async (manager) => {
       const issue = await manager
@@ -443,10 +447,7 @@ export async function deleteIssueService(
       });
 
       if (!isProjectMember) {
-        throw new AppError(
-          403,
-          "You are not a member of this project",
-        );
+        throw new AppError(403, "You are not a member of this project");
       }
 
       const user = await manager.findOne(Users, {

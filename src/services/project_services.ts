@@ -245,3 +245,16 @@ export const myProjectsForSearchService = async (userId: string)=>{
     throw new AppError(500,"fetching failed for user projects ");
   }
 }
+export async function getAllProjectMembersService(
+  projectId: string,
+  userId: string,
+) {
+  const result= projectRepo
+    .createQueryBuilder("project")
+    .innerJoin("project.members", "members")
+    .innerJoin("members.user", "user")
+    .where("project.project_id = :pid", { pid: projectId })
+    .select(["user.id AS id", "user.name AS name", "user.email AS email","user.role AS role","user.createdAt AS joinedAt"])
+    .getRawMany();
+  return result;
+}

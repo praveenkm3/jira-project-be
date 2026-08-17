@@ -3,7 +3,7 @@ import { Router } from "express";
 const authRouter=Router();
 
 
-import { register ,login ,logout, refresh } from "../controllers/auth.controller.ts"; 
+import { register ,login ,logout } from "../controllers/auth.controller.ts"; 
 
 
 authRouter.post('/register',register);

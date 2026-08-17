@@ -14,6 +14,7 @@ const issueRouter = Router();
 
 issueRouter.post("/:pid", createIssue);
 issueRouter.get("/", getIssues);
+issueRouter.get("/get/:search", getIssues);
 issueRouter.get("/:pid", getProjectIssues);
 issueRouter.get("/:pid/members", getProjectMembers);
 issueRouter.put("/update/:issueId", editIssue);

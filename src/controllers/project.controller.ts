@@ -6,8 +6,10 @@ import {
   deleteProjectService,
   specificProjectService,
   allProjectsService,
-  myProjectsForSearchService
+  myProjectsForSearchService,
+  getAllProjectMembersService
 } from "../services/project_services.ts";
+import { projectRepo } from "../config/repos.ts";
 
 export async function createProject(
   req: Request,
@@ -122,6 +124,20 @@ export async function getAllProjectsForSearch(
   try {
     const user = req.user;
     const response = await myProjectsForSearchService(user?.id as string);
+    return res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+}
+export async function getAllProjectMembers(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    const {pid=''}=req.params;
+    const response = await getAllProjectMembersService(pid as string,user?.id as string);
     return res.status(201).json(response);
   } catch (error) {
     next(error);

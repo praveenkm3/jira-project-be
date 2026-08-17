@@ -23,7 +23,7 @@ export const getSpecificUserService = async (uid: string) => {
     const result:usersReturnType | null=await usersRepo
     .createQueryBuilder("user")
     .select(["user.id","user.name","user.email","user.role"])
-    .where("user.id != :uid",{uid:uid})
+    .where("user.id = :uid",{uid:uid})
     .getOne();
     return result;
   } catch (error) {
