@@ -86,13 +86,6 @@ export async function editProjectMembersService(
         };
       }
     const result= await AppDataSource.transaction(async (manager) => {
-    if (!usersToRemove.length) {
-      return {
-        updated: false,
-        message: "No members selected",
-      };
-    }
-
     await manager
       .createQueryBuilder()
       .update(Issues)
@@ -114,6 +107,7 @@ export async function editProjectMembersService(
       message: "Project members removed successfully",
     };
   });
+  return result;
   } catch (error) {
     throw new AppError(500,"DB error, while removing project members")
   }

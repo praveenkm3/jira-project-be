@@ -291,9 +291,9 @@ export async function getIssueService(userId: string, search: string) {
     });
 
     const grouped = {
-      'Open': [] as typeof result,
+      Open: [] as typeof result,
       "In Progress": [] as typeof result,
-      'Done': [] as typeof result,
+      Done: [] as typeof result,
     };
     for (const issue of result) {
       if (issue.issue_status in grouped) {
@@ -351,43 +351,91 @@ export async function changeIssueStatusService(
     );
   }
 }
-export async function getProjectIssueService(projectId: string) {
+export async function getProjectIssueService(
+  projectId: string,
+  pageNumber: number | string = 0,
+  recordsPerPage: number | string = 10,
+  filterColumn:string | undefined,
+  filterValue:string  | undefined,
+) {
   try {
-    const result = await issueRepo.find({
-      where: {
-        project: {
-          project_id: projectId,
-        },
-      },
-      relations: {
-        reporter: true,
-        assignee: true,
-      },
-      select: {
-        issue_id: true,
-        issue_number: true,
-        issue_title: true,
-        issue_description: true,
-        issue_type: true,
-        issue_priority: true,
-        issue_status: true,
-        issue_due_date: true,
-        createdAt: true,
-        updatedAt: true,
+    // const result = await issueRepo.find({
+    //   where: {
+    //     project: {
+    //       project_id: projectId,
+    //     },
+    //   },
+    //   relations: {
+    //     reporter: true,
+    //     assignee: true,
+    //   },
+    //   select: {
+    //     issue_id: true,
+    //     issue_number: true,
+    //     issue_title: true,
+    //     issue_description: true,
+    //     issue_type: true,
+    //     issue_priority: true,
+    //     issue_status: true,
+    //     issue_due_date: true,
+    //     createdAt: true,
+    //     updatedAt: true,
 
-        reporter: {
-          id: true,
-          email: true,
-        },
+    //     reporter: {
+    //       id: true,
+    //       email: true,
+    //     },
 
-        assignee: {
-          id: true,
-          email: true,
-        },
-      },
-    });
+    //     assignee: {
+    //       id: true,
+    //       email: true,
+    //     },
+    //   },
+    // });
+    const query = await issueRepo
+      .createQueryBuilder("issues")
+      .innerJoin("issues.project", "project")
+      .innerJoin("issues.reporter", "reporter")
+      .innerJoin("issues.assignee", "assignee")
+      .where("project.project_id = :projectId", { projectId })
+    if(filterColumn==='issue_number'){
+      query.andWhere(`issues.${filterColumn}>= `)
+    }
+    else if(filterColumn?.startsWith('assignee')){
+      query.andWhere(`assignee.email ILIKE :value`,{value:`%${filterValue}%`})
+    }else if(filterColumn?.startsWith('reporter')){
+      query.andWhere(`reporter.email ILIKE :value`,{value:`%${filterValue}%`})
+    }
+    else if(filterColumn && filterValue){
+      query.andWhere(`issues.${filterColumn} ILIKE :value`,{value:`%${filterValue}%`})
+    } 
+      query.select([
+        "issues.issue_id",
+        "issues.issue_number",
+        "issues.issue_title",
+        "issues.issue_description",
+        "issues.issue_type",
+        "issues.issue_priority",
+        "issues.issue_type",
+        "issues.issue_due_date",
+        "issues.issue_status",
+        "issues.createdAt",
+        "issues.updatedAt",
 
-    return result;
+        "reporter.email",
+        "reporter.id",
+
+        "assignee.email",
+        "assignee.id",
+      ]);
+    const totalRecords = (await query.getMany()).length;
+    query.limit(Number(recordsPerPage));
+    const skipRecords =
+      Number(pageNumber) <= 0 ? 0 : Number(pageNumber) * Number(recordsPerPage);
+    query.offset(skipRecords);
+    const result = await query.getMany();
+    console.log(totalRecords);
+    return { totalRecords: totalRecords, result: result };
   } catch (error) {
     throw error;
   }
@@ -396,15 +444,23 @@ export async function getProjectMembersService(
   projectId: string,
   userId: string,
 ) {
-  return projectRepo
-    .createQueryBuilder("project")
-    .innerJoin("project.members", "members")
-    .innerJoin("members.user", "user")
-    .where("project.project_id = :pid", { pid: projectId })
-    .andWhere("user.role != :role", { role: "admin" })
-    .andWhere("user.id != :userId", { userId })
-    .select(["user.id AS id", "user.name AS name", "user.email AS email"])
-    .getRawMany();
+  try {
+    const result = projectRepo
+      .createQueryBuilder("project")
+      .innerJoin("project.members", "members")
+      .innerJoin("members.user", "user")
+      .where("project.project_id = :pid", { pid: projectId })
+      .andWhere("user.role != :role", { role: "admin" })
+      .andWhere("user.id != :userId", { userId })
+      .select(["user.id AS id", "user.name AS name", "user.email AS email"])
+      .getRawMany();
+    return result;
+  } catch (error) {
+    throw new AppError(
+      500,
+      "DB Error, Something went wrong while fetching project members",
+    );
+  }
 }
 export async function deleteIssueService(issueId: string, userId: string) {
   try {
@@ -459,14 +515,10 @@ export async function deleteIssueService(issueId: string, userId: string) {
       if (!user) {
         throw new AppError(404, "User not found");
       }
-      const isAdmin = user.role === "admin";
       const isReporter = reporterId === userId;
 
-      if (!isAdmin && !isReporter) {
-        throw new AppError(
-          403,
-          "Only the issue creator or an administrator can delete this issue",
-        );
+      if (!isReporter) {
+        throw new AppError(403, "Only the issue creator can delete this issue");
       }
 
       await manager.remove(Issues, issueWithRelations);

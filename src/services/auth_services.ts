@@ -1,7 +1,7 @@
 import type { loginType, registerType } from "../types/auth.types.ts";
 import { unHashPassword } from "../utils/hashPassword.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { generateAccessToken, generateRefreshToken, validateAccessToken, validateRefreshToken } from "../utils/tokens.ts";
+import { generateAccessToken, generateRefreshToken } from "../utils/tokens.ts";
 import type { tokenObject } from "../types/auth.types.ts";
 import { encryptToken } from "../utils/hashCookie.ts";
 import { usersRepo } from "../config/repos.ts";

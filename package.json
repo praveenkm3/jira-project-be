@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "tsx watch src/index.ts",
-  "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate",
-  "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/config/db.ts",
-  "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/config/db.ts"
-},
+    "dev": "tsx watch src/index.ts",
+    "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate",
+    "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/config/db.ts",
+    "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/config/db.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,6 +20,7 @@
     "dayjs": "^1.11.21",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",

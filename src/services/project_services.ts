@@ -254,7 +254,7 @@ export async function getAllProjectMembersService(
     .innerJoin("project.members", "members")
     .innerJoin("members.user", "user")
     .where("project.project_id = :pid", { pid: projectId })
-    .select(["user.id AS id", "user.name AS name", "user.email AS email","user.role AS role","user.createdAt AS joinedAt"])
+    .select(["user.id AS id", "user.name AS name","user.status AS status", "user.email AS email","user.role AS role","user.createdAt AS joinedAt"])
     .getRawMany();
   return result;
 }

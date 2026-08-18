@@ -14,11 +14,13 @@ import commentRouter from "./routes/comment.routes.ts";
 import notifyRouter from "./routes/notifications.routes.ts";
 import boardRouter from "./routes/dashboard.routes.ts";
 import { refresh } from "./controllers/auth.controller.ts";
+import helmet from "helmet";
 
 const ALLOWED_ORIGIN=process.env.ALLOWED_ORIGIN
 const app = express();
 const PORT = process.env.PORT;
 
+app.use(helmet())
 app.use(cors({
     origin:ALLOWED_ORIGIN,
     credentials:true,
