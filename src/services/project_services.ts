@@ -4,7 +4,7 @@ import type {
 } from "../types/project.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Projects } from "../config/entities/Projects.ts";
-import { projectMemberRepo, projectRepo } from "../config/repos.ts";
+import { projectMemberRepo, projectRepo,statusRepository } from "../config/repos.ts";
 import type { QueryDeepPartialEntity } from "typeorm";
 import { AppDataSource } from "../config/db.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
@@ -129,8 +129,10 @@ export const specificProjectService = async (
     const query = projectRepo
       .createQueryBuilder("project")
       .leftJoinAndSelect("project.created_by", "creator")
+      .leftJoinAndSelect("creator.role","creatorRole")
       .leftJoinAndSelect("project.members", "member")
       .leftJoinAndSelect("member.user", "memberUser")
+      .leftJoinAndSelect("memberUser.role","memberRole")
       .select([
         "project.project_id",
         "project.project_name",
@@ -141,14 +143,14 @@ export const specificProjectService = async (
         "creator.id",
         "creator.name",
         "creator.email",
-        "creator.role",
+        "creatorRole.role_name",
 
         "member.project_members_id",
 
         "memberUser.id",
         "memberUser.name",
         "memberUser.email",
-        "memberUser.role",
+        "memberRole.role_name",
       ])
       .where("project.project_id = :projectId", {
         projectId,
@@ -256,5 +258,17 @@ export async function getAllProjectMembersService(
     .where("project.project_id = :pid", { pid: projectId })
     .select(["user.id AS id", "user.name AS name","user.status AS status", "user.email AS email","user.role AS role","user.createdAt AS joinedAt"])
     .getRawMany();
+  return result;
+}
+export async function specificProjectStatusesService(
+  projectId: string, 
+) {
+  const result= await statusRepository
+  .createQueryBuilder("status")
+  .innerJoin("status.project","project")
+  .where("project.project_id = :projectId",{projectId})
+  .select(["status.status_name AS status_name","status.status_id AS status_id"])
+  .getRawMany();
+    
   return result;
 }

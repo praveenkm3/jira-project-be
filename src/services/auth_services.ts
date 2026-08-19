@@ -4,17 +4,18 @@ import { AppError } from "../middlewares/errorMiddleware.ts";
 import { generateAccessToken, generateRefreshToken } from "../utils/tokens.ts";
 import type { tokenObject } from "../types/auth.types.ts";
 import { encryptToken } from "../utils/hashCookie.ts";
-import { usersRepo } from "../config/repos.ts";
-import { hashPassword } from "../utils/hashPassword.ts";
-import { UserRole } from "../config/entities/Users.ts";
+import { roleRepository, usersRepo } from "../config/repos.ts";
+import { hashPassword } from "../utils/hashPassword.ts"; 
 
 export async function loginService(data: loginType) {
   try {
     const { email, password } = data;
 
     const checkUser = await usersRepo
-      .createQueryBuilder()
-      .select(["name", "email", "password", "role", "id"])
+      .createQueryBuilder("users")
+      .innerJoin("users.role","role")
+      .select(["name", "email", "password", "id"])
+      .addSelect("role_name","role")
       .where("email = :email", { email })
       .execute();
 
@@ -43,8 +44,6 @@ export async function loginService(data: loginType) {
 export async function registerService(data: registerType) {
   try {
     const { email, name, password, role } = data;
-    let setRole: UserRole =
-      role === "admin" ? UserRole.ADMIN : UserRole.DEVELOPER;
 
     const checkUser = await usersRepo
       .createQueryBuilder()
@@ -59,10 +58,20 @@ export async function registerService(data: registerType) {
       };
     }
     const hashedPassword = await hashPassword(password);
+    const getRole=await roleRepository.findOne({
+      where:{
+        role_id:role
+      }
+    });
+    if(!getRole){
+      throw new AppError(400,"Invalid role selected");
+    } 
     const createUser = usersRepo.create({
       email,
       password: hashedPassword,
-      role: setRole,
+      role: {
+        role_id:getRole.role_id
+      },
       name,
     });
 
@@ -73,5 +82,13 @@ export async function registerService(data: registerType) {
     };
   } catch (error) {
     throw new AppError(400, "Registration Failed");
+  }
+}
+export async function getRoleService() {
+  try {
+    const response=await roleRepository.find();
+    return response;
+  } catch (error) {
+    throw new AppError(500,"Unable to fetch roles");
   }
 }

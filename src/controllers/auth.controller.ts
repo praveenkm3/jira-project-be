@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { registerService } from "../services/auth_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { loginService } from "../services/auth_services.ts";
+import { loginService ,getRoleService} from "../services/auth_services.ts";
 import "dotenv/config";
 import { decryptToken, encryptToken } from "../utils/hashCookie.ts";
 import { generateAccessToken, validateAccessToken, validateRefreshToken } from "../utils/tokens.ts";
@@ -88,5 +88,17 @@ export async function refresh(req: Request, res: Response) {
     } else {
       return res.status(401).json({ message: "Tokens Expired" });
     }
+  }
+}
+export async function getRoles(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {  
+    const response = await getRoleService();
+    return res.status(201).json(response);
+  } catch (error) {
+    next(error);
   }
 }

@@ -5,15 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
+import { Role } from "./Roles.ts";
 import { Projects } from "./Projects.ts";
 import { ProjectMembers } from "./ProjectMembers.ts";
-
-export enum UserRole {
-  ADMIN = "admin",
-  DEVELOPER = "developer",
-}
-
 export enum UserStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -43,12 +40,11 @@ export class Users {
   })
   password!: string;
 
-  @Column({
-    type: "enum",
-    enum: UserRole,
-    default: UserRole.DEVELOPER,
+  @ManyToOne(() => Role, (role) => role.users, {
+    nullable: false,
   })
-  role!: UserRole;
+  @JoinColumn({ name: "role_id" })
+  role!: Role;
 
   @Column({
     type: "enum",
@@ -68,8 +64,8 @@ export class Users {
     name: "updated_at",
   })
   updatedAt!: Date;
-  
-//bidirectional
+
+  //bidirectional
   @OneToMany(() => Projects, (project) => project.created_by)
   projects!: Projects[];
 
