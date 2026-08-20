@@ -1,6 +1,4 @@
-import type {
-  createProjectType, 
-} from "../types/project.types.ts";
+import type { createProjectType } from "../types/project.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Projects } from "../config/entities/Projects.ts";
 import {
@@ -51,7 +49,7 @@ export const createProjectService = async (
         message: "Project created successfully",
       };
     });
-  } catch (error) {
+  } catch {
     throw new AppError(400, "Error while creating Project");
   }
   return result;
@@ -229,7 +227,7 @@ export const allProjectsService = async (userId: string, role: string) => {
     }
 
     return await query.getMany();
-  } catch (error) {
+  } catch {
     throw new AppError(500, "Fetching projects failed");
   }
 };
@@ -242,13 +240,11 @@ export const myProjectsForSearchService = async (userId: string) => {
       .where("member.member_id = :userId", { userId })
       .orderBy("project.project_name", "ASC")
       .getMany();
-  } catch (error) {
+  } catch {
     throw new AppError(500, "fetching failed for user projects ");
   }
 };
-export async function getAllProjectMembersService(
-  projectId: string,
-) {
+export async function getAllProjectMembersService(projectId: string) {
   const result = projectRepo
     .createQueryBuilder("project")
     .innerJoin("project.members", "members")
@@ -324,7 +320,7 @@ export async function addStatusesToProjectService(
     } else {
       throw error;
     }
-  } catch (error) {
+  } catch {
     throw new AppError(500, "Status was not added");
   }
 }

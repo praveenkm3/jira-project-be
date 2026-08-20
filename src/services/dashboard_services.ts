@@ -39,10 +39,7 @@ export const progressCountServices = async (userId: string) => {
       created: query3,
       dues_count: query4,
     };
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+  } catch {
     throw new AppError(
       500,
       "DB Error ,Something went wrong at fetching progress counts",
@@ -71,10 +68,7 @@ export const statusCountServices = async (userId: string, role: string) => {
       .addGroupBy("status.status_name")
       .having("COUNT(DISTINCT issue.issue_id) > 0")
       .getRawMany();
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+  } catch {
     throw new AppError(500, "DB Error ,Failed to fetch status counts");
   }
 };
@@ -124,10 +118,7 @@ export const typeCountServices = async (userId: string, role: string) => {
     }
 
     return await queryBuilder.groupBy("issue.issue_type").getRawMany();
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+  } catch {
     throw new AppError(500, "DB Error ,Failed to fetch type counts");
   }
 };

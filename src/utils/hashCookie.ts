@@ -12,7 +12,7 @@ export function encryptToken(token: string) {
     encrypted += cipher.final("hex");
     const authTag = cipher.getAuthTag().toString("hex");
     return `${iv.toString("hex")}:${authTag}:${encrypted}`;
-  } catch (error) {
+  } catch {
     return "Tokens Invalid";
   }
 }
@@ -29,7 +29,7 @@ export function decryptToken(cookieValue:any) {
     let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted; 
-    } catch (error) {
+    } catch {
       return "Tokens Invalid";
     }
 }

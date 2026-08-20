@@ -80,7 +80,7 @@ export async function registerService(data: registerType) {
       created: true,
       message: "User Registered Successfully",
     };
-  } catch (error) {
+  } catch {
     throw new AppError(400, "Registration Failed");
   }
 }
@@ -88,7 +88,7 @@ export async function getRoleService() {
   try {
     const response=await roleRepository.find();
     return response;
-  } catch (error) {
+  } catch {
     throw new AppError(500,"Unable to fetch roles");
   }
 }

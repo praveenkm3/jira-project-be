@@ -14,7 +14,7 @@ export const getUsersService = async (userId: string) => {
       .where("user.id != :uid", { uid: userId })
       .getRawMany();
     return result;
-  } catch (error) {
+  } catch{
     throw new AppError(404, "users not found");
   }
 };
@@ -32,7 +32,7 @@ export const getSpecificUserService = async (uid: string) => {
       .getRawOne();
 
     return result;
-  } catch (error) {
+  } catch {
     throw new AppError(404, "user not found");
   }
 };
