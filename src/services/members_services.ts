@@ -2,8 +2,7 @@ import type { insertedDataType } from "../types/members.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { projectMemberRepo } from "../config/repos.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
-import { AppDataSource } from "../config/db.ts";
-import { Not } from "typeorm";
+import { AppDataSource } from "../config/db.ts"; 
 import { Issues } from "../config/entities/Issues.ts";
 
 export async function addMembersToProjectService(
@@ -109,6 +108,12 @@ export async function editProjectMembersService(
   });
   return result;
   } catch (error) {
-    throw new AppError(500,"DB error, while removing project members")
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      500,
+      "DB Error ,while removing project members",
+    ); 
   }
 }

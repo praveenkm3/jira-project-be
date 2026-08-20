@@ -19,7 +19,7 @@ export function generateRefreshToken({email,role,id}:tokenObject){
 export function validateAccessToken(accessToken:string){
     try{
         const payload=jwt.verify(accessToken,ACCESS_SECRET);
-        return [true,payload]
+        return [true,payload as tokenObject]
     }catch(error){
         return [false,null];
     }

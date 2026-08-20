@@ -1,6 +1,5 @@
 import type {
-  createProjectType,
-  singleProject,
+  createProjectType, 
 } from "../types/project.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Projects } from "../config/entities/Projects.ts";
@@ -66,7 +65,6 @@ export const deleteProjectService = async (
     .delete()
     .from(Projects)
     .where("project_id = :projectId", { projectId })
-    // .andWhere("created_by = :userId", { userId })
     .execute();
 
   if (result.affected === 0) {
@@ -250,7 +248,6 @@ export const myProjectsForSearchService = async (userId: string) => {
 };
 export async function getAllProjectMembersService(
   projectId: string,
-  userId: string,
 ) {
   const result = projectRepo
     .createQueryBuilder("project")

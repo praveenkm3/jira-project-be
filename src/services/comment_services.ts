@@ -1,6 +1,4 @@
-import { commentsRepo, projectMemberRepo, issueRepo } from "../config/repos.ts";
-import { Comments } from "../config/entities/Comments.ts";
-import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
+import { Comments } from "../config/entities/Comments.ts"; 
 import { AppDataSource } from "../config/db.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Issues } from "../config/entities/Issues.ts";
@@ -11,7 +9,7 @@ export async function addCommentService(
   comment: string,
 ) {
   try {
-    const result = await AppDataSource.transaction(async (manager) => {
+    await AppDataSource.transaction(async (manager) => {
       const check1 = await manager.existsBy(Issues, {
         issue_id: issueId,
         project: {

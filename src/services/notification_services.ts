@@ -15,6 +15,9 @@ export const getNotificationsService = async (userId: string) => {
     });
     return result;
   } catch (error) {
-    throw new AppError(400, "Unable to fetch noifications");
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Unable to fetch noifications"); 
   }
 };

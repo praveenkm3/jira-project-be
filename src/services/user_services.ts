@@ -1,5 +1,4 @@
-import { AppError } from "../middlewares/errorMiddleware.ts";
-import { Users } from "../config/entities/Users.ts";
+import { AppError } from "../middlewares/errorMiddleware.ts"; 
 import { usersRepo } from "../config/repos.ts";
 import type { usersReturnType } from "../types/user.types.ts";
 
