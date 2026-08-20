@@ -4,10 +4,16 @@ import type {
 } from "../types/project.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Projects } from "../config/entities/Projects.ts";
-import { projectMemberRepo, projectRepo,statusRepository } from "../config/repos.ts";
+import {
+  projectMemberRepo,
+  projectRepo,
+  statusRepository,
+} from "../config/repos.ts";
 import type { QueryDeepPartialEntity } from "typeorm";
 import { AppDataSource } from "../config/db.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
+import { ProjectStatuses } from "../config/entities/ProjectStatuses.ts";
+import { error } from "node:console";
 
 export const createProjectService = async (
   data: createProjectType,
@@ -129,10 +135,10 @@ export const specificProjectService = async (
     const query = projectRepo
       .createQueryBuilder("project")
       .leftJoinAndSelect("project.created_by", "creator")
-      .leftJoinAndSelect("creator.role","creatorRole")
+      .leftJoinAndSelect("creator.role", "creatorRole")
       .leftJoinAndSelect("project.members", "member")
       .leftJoinAndSelect("member.user", "memberUser")
-      .leftJoinAndSelect("memberUser.role","memberRole")
+      .leftJoinAndSelect("memberUser.role", "memberRole")
       .select([
         "project.project_id",
         "project.project_name",
@@ -157,12 +163,9 @@ export const specificProjectService = async (
       });
 
     if (role === "admin") {
-      query.andWhere(
-        `(creator.id = :userId OR memberUser.id = :userId)`,
-        {
-          userId,
-        },
-      );
+      query.andWhere(`(creator.id = :userId OR memberUser.id = :userId)`, {
+        userId,
+      });
     } else {
       query.andWhere("memberUser.id = :userId", {
         userId,
@@ -188,6 +191,7 @@ export const allProjectsService = async (userId: string, role: string) => {
       .leftJoinAndSelect("project.created_by", "creator")
       .leftJoinAndSelect("project.members", "member")
       .leftJoinAndSelect("member.user", "memberUser")
+      .leftJoinAndSelect("memberUser.role", "role")
       .select([
         "project.project_id",
         "project.project_name",
@@ -204,7 +208,8 @@ export const allProjectsService = async (userId: string, role: string) => {
         "memberUser.id",
         "memberUser.name",
         "memberUser.email",
-        "memberUser.role",
+
+        "role.role_name",
       ]);
 
     const memberSubQuery = query
@@ -217,58 +222,112 @@ export const allProjectsService = async (userId: string, role: string) => {
     if (role === "admin") {
       query.where(
         `(memberUser.id = :userId OR project.project_id IN ${memberSubQuery})`,
-        { userId }
+        { userId },
       );
     } else {
-      query.where(
-        `project.project_id IN ${memberSubQuery}`,
-        { userId }
-      );
+      query.where(`project.project_id IN ${memberSubQuery}`, {
+        userId,
+      });
     }
 
     return await query.getMany();
   } catch (error) {
-    throw new AppError(500,"Fetching projects failed");
+    throw new AppError(500, "Fetching projects failed");
   }
 };
-export const myProjectsForSearchService = async (userId: string)=>{
- try {
+export const myProjectsForSearchService = async (userId: string) => {
+  try {
     return await projectRepo
       .createQueryBuilder("project")
       .innerJoin("project.members", "member")
-      .select([
-        "project.project_id",
-        "project.project_name",
-      ])
+      .select(["project.project_id", "project.project_name"])
       .where("member.member_id = :userId", { userId })
       .orderBy("project.project_name", "ASC")
       .getMany();
   } catch (error) {
-    throw new AppError(500,"fetching failed for user projects ");
+    throw new AppError(500, "fetching failed for user projects ");
   }
-}
+};
 export async function getAllProjectMembersService(
   projectId: string,
   userId: string,
 ) {
-  const result= projectRepo
+  const result = projectRepo
     .createQueryBuilder("project")
     .innerJoin("project.members", "members")
     .innerJoin("members.user", "user")
+    .innerJoin("user.role", "role")
     .where("project.project_id = :pid", { pid: projectId })
-    .select(["user.id AS id", "user.name AS name","user.status AS status", "user.email AS email","user.role AS role","user.createdAt AS joinedAt"])
+    .select([
+      "user.id AS id",
+      "user.name AS name",
+      "user.status AS status",
+      "user.email AS email",
+      "role.role_name AS role",
+      "user.createdAt AS joinedAt",
+    ])
     .getRawMany();
   return result;
 }
-export async function specificProjectStatusesService(
-  projectId: string, 
-) {
-  const result= await statusRepository
-  .createQueryBuilder("status")
-  .innerJoin("status.project","project")
-  .where("project.project_id = :projectId",{projectId})
-  .select(["status.status_name AS status_name","status.status_id AS status_id"])
-  .getRawMany();
-    
+export async function specificProjectStatusesService(projectId: string) {
+  const result = await statusRepository
+    .createQueryBuilder("status")
+    .innerJoin("status.project", "project")
+    .where("project.project_id = :projectId", { projectId })
+    .select([
+      "status.status_name AS status_name",
+      "status.status_id AS status_id",
+    ])
+    .getRawMany();
+
   return result;
+}
+
+export async function addStatusesToProjectService(
+  projectId: string,
+  userId: string,
+  status_name: string,
+) {
+  try {
+    const check1 = await projectMemberRepo.findOne({
+      where: {
+        user: {
+          id: userId,
+          role: {
+            role_name: "admin",
+          },
+          projects: {
+            project_id: projectId,
+          },
+        },
+      },
+    });
+    if (!check1) {
+      return {
+        statusAdded: false,
+        message:
+          "Not allowed to add the issue to project or not admin of the project",
+      };
+    }
+    const result = await statusRepository
+      .createQueryBuilder("status")
+      .insert()
+      .into(ProjectStatuses)
+      .values({
+        status_name: status_name,
+        project: {
+          project_id: projectId,
+        },
+      })
+      .execute();
+    if (result.identifiers.length > 0) {
+      return {
+        message: "Status added successfully",
+      };
+    } else {
+      throw error;
+    }
+  } catch (error) {
+    throw new AppError(500, "Status was not added");
+  }
 }

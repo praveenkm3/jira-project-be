@@ -64,13 +64,6 @@ export class Issues {
   })
   issue_priority!: string;
 
-  // @Column({
-  //   type: "enum",
-  //   enum: IssueStatus,
-  //   nullable: false,
-  // })
-  // issue_status!: string;
-
   @ManyToOne(() => ProjectStatuses, {
     nullable: true,
     onDelete: "RESTRICT",
@@ -90,6 +83,12 @@ export class Issues {
   })
   @JoinColumn({ name: "reporter_id" })
   reporter!: Users;
+
+  @Column({
+    type: "date",
+    nullable: true,
+  })
+  issue_start_date!: Date | null;
 
   @Column({
     type: "date",

@@ -1,5 +1,8 @@
 import { AppDataSource } from "../config/db.ts";
-import type { issueCreatetype, IssuesByProject } from "../types/issues.types.ts";
+import type {
+  issueCreatetype,
+  IssuesByProject,
+} from "../types/issues.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { issueRepo, projectRepo } from "../config/repos.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
@@ -26,6 +29,7 @@ export async function createIssueService(
       assignee_id,
       due_date,
       status_id,
+      start_date,
     } = data;
     if (
       !projectId ||
@@ -50,6 +54,20 @@ export async function createIssueService(
 
     if (due < today) {
       throw new Error("Due date cannot be in the past");
+    }
+    let start: Date | null = null;
+
+    if (start_date) {
+      start = new Date(start_date);
+      start.setHours(0, 0, 0, 0);
+
+      if (start < today) {
+        throw new AppError(400, "Start date cannot be in the past");
+      }
+
+      if (start > due) {
+        throw new AppError(400, "Start date cannot be after due date");
+      }
     }
     const result = await AppDataSource.transaction(async (manager) => {
       const check1 = await manager.existsBy(ProjectMembers, {
@@ -109,6 +127,7 @@ export async function createIssueService(
         issue_due_date: due_date,
         issue_description: description,
         issue_number: issueNumber,
+        issue_start_date: start,
       });
       project.next_issue_number = issueNumber;
       await manager.save(Issues, issueCreation);
@@ -155,6 +174,7 @@ export async function editIssueService(
       assignee_id,
       due_date,
       status_id,
+      start_date,
     } = data;
 
     if (assignee_id && userId === assignee_id) {
@@ -170,7 +190,6 @@ export async function editIssueService(
         throw new AppError(400, "Due date cannot be in the past");
       }
     }
-
     const result = await AppDataSource.transaction(async (manager) => {
       const lockedIssue = await manager
         .getRepository(Issues)
@@ -212,7 +231,53 @@ export async function editIssueService(
       if (!check2) {
         throw new AppError(403, "You are not a member of this project");
       }
+      const currentStartDate = issue.issue_start_date;
+      const currentDueDate = issue.issue_due_date;
+      const finalStartDate =
+        start_date !== undefined
+          ? start_date
+            ? new Date(start_date)
+            : null
+          : currentStartDate;
+      const finalDueDate =
+        due_date !== undefined
+          ? due_date
+            ? new Date(due_date)
+            : null
+          : currentDueDate;
+          const today = new Date();
+      today.setHours(0, 0, 0, 0);
+ 
+      if (finalStartDate) {
+        finalStartDate.setHours(0, 0, 0, 0);
 
+        if (finalStartDate < today) {
+          throw new AppError(
+            400,
+            "Start date cannot be in the past",
+          );
+        }
+      }
+      if (finalDueDate) {
+        finalDueDate.setHours(0, 0, 0, 0);
+
+        if (finalDueDate < today) {
+          throw new AppError(
+            400,
+            "Due date cannot be in the past",
+          );
+        }
+      }
+      if (
+        finalStartDate &&
+        finalDueDate &&
+        finalStartDate > finalDueDate
+      ) {
+        throw new AppError(
+          400,
+          "Start date cannot be after due date",
+        );
+      }
       const updates: Partial<Issues> = {};
       if (title !== undefined) updates.issue_title = title;
       if (description !== undefined) updates.issue_description = description;
@@ -224,6 +289,7 @@ export async function editIssueService(
         } as ProjectStatuses;
       }
       if (due_date !== undefined) updates.issue_due_date = due_date as Date;
+      if (start_date !== undefined) updates.issue_start_date= start_date as Date;
       if (assignee_id !== undefined) {
         updates.assignee = { id: assignee_id } as Users;
       }
@@ -265,47 +331,49 @@ export async function editIssueService(
 export async function getIssueService(userId: string, search: string) {
   try {
     const searchValue = search.trim();
-    const query=await issueRepo
-    .createQueryBuilder("issue")
-    .innerJoin("issue.project","project")
-    .innerJoin("issue.reporter","reporter")
-    .innerJoin("issue.assignee","assignee")
-    .innerJoin("issue.issue_status","status")
-    .select([
-      "issue.issue_id as issue_id",
-      "issue.issue_number as issue_number",
-      "issue.issue_title as issue_title",
-      "issue.issue_description as issue_description",
-      "issue.issue_type as issue_type",
-      "issue.issue_priority as issue_priority",
-      "issue.issue_due_date as issue_due_date",
-     
-      "assignee.id as assignee_id",
-      "assignee.email as assignee_email",
+    const query = await issueRepo
+      .createQueryBuilder("issue")
+      .innerJoin("issue.project", "project")
+      .innerJoin("issue.reporter", "reporter")
+      .innerJoin("issue.assignee", "assignee")
+      .innerJoin("issue.issue_status", "status")
+      .select([
+        "issue.issue_id as issue_id",
+        "issue.issue_number as issue_number",
+        "issue.issue_title as issue_title",
+        "issue.issue_description as issue_description",
+        "issue.issue_type as issue_type",
+        "issue.issue_priority as issue_priority",
+        "issue.issue_due_date as issue_due_date",
 
-      "project.project_id as project_id",
-      "project.project_name as project_name",
+        "assignee.id as assignee_id",
+        "assignee.email as assignee_email",
 
-      "reporter.id as reporter_id",
-      "reporter.email as reporter_email",
+        "project.project_id as project_id",
+        "project.project_name as project_name",
 
-      "status.status_name as status_name",
-      "status.status_id as status_id",
-    ])
-    .where("assignee.id = :uid",{uid:userId}) 
-    if(searchValue){
-      query.andWhere("issue.issue_title ILIKE :value",{value:`%${searchValue}%`})
+        "reporter.id as reporter_id",
+        "reporter.email as reporter_email",
+
+        "status.status_name as status_name",
+        "status.status_id as status_id",
+      ])
+      .where("assignee.id = :uid", { uid: userId });
+    if (searchValue) {
+      query.andWhere("issue.issue_title ILIKE :value", {
+        value: `%${searchValue}%`,
+      });
     }
-    const data=await query.getRawMany(); 
+    const data = await query.getRawMany();
     const result: IssuesByProject = {};
 
-for (const ele of data) {
-  if (ele.project_name in result) {
-    (result[ele.project_name] ??= []).push(ele);
-  } else {
-    result[ele.project_name] = [ele];
-  }
-}
+    for (const ele of data) {
+      if (ele.project_name in result) {
+        (result[ele.project_name] ??= []).push(ele);
+      } else {
+        result[ele.project_name] = [ele];
+      }
+    }
 
     return result;
   } catch (error) {
@@ -336,7 +404,7 @@ export async function changeIssueStatusService(
         },
         {
           issue_status: {
-            status_id:statusValue
+            status_id: statusValue,
           },
         },
       );
@@ -398,6 +466,7 @@ export async function getProjectIssueService(
       "issues.issue_priority",
       "issues.issue_type",
       "issues.issue_due_date",
+      "issues.issue_start_date",
       "issues.createdAt",
       "issues.updatedAt",
 
@@ -541,6 +610,7 @@ export async function getIssueByIdService(issueId: string) {
         project: true,
         reporter: true,
         assignee: true,
+        issue_status:true
       },
     });
 
@@ -555,7 +625,7 @@ export async function getIssueByIdService(issueId: string) {
       issue_description: issue.issue_description,
       issue_type: issue.issue_type,
       issue_priority: issue.issue_priority,
-      issue_status: issue.issue_status,
+      issue_status: issue.issue_status.status_name,
       issue_due_date: issue.issue_due_date,
       createdAt: issue.createdAt,
       updatedAt: issue.updatedAt,

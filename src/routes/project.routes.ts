@@ -8,6 +8,7 @@ import {
   getAllProjects,
   getAllProjectsForSearch,
   getSpecificStatusesProject,
+  addStatusesToProject
 } from "../controllers/project.controller.ts";
 import { checkProjectAdmin } from "../middlewares/projectMiddleware.ts";
 
@@ -20,6 +21,7 @@ projectRouter.post("/create/", createProject);
 projectRouter.put("/update/:pid", checkProjectAdmin, editProject);
 projectRouter.get("/:pid", getSpecificProject);
 projectRouter.get("/status/:pid", getSpecificStatusesProject);
+projectRouter.post("/add-status/:pid", addStatusesToProject);
 projectRouter.delete("/delete/:pid", checkProjectAdmin, deleteProject);
 
 export default projectRouter;

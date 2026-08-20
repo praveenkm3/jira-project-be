@@ -9,6 +9,7 @@ export type issueCreatetype = {
   priority: IssuePriority;
   assignee_id: string;
   due_date: Date;
+  start_date?: Date;
   status_id:string
 };
 

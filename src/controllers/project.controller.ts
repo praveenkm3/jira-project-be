@@ -8,7 +8,8 @@ import {
   allProjectsService,
   myProjectsForSearchService,
   getAllProjectMembersService,
-  specificProjectStatusesService
+  specificProjectStatusesService,
+  addStatusesToProjectService
 } from "../services/project_services.ts";
 import { projectRepo } from "../config/repos.ts";
 
@@ -159,4 +160,23 @@ export async function getSpecificStatusesProject(
     next(error);
   }
 }
+
+export async function addStatusesToProject(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { pid = "" } = req.params;
+    const userId=req.user?.id as string;
+    const{status_name}=req.body; 
+    
+    const response = await addStatusesToProjectService( pid as string,userId,status_name);
+
+    return res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+}
+
 

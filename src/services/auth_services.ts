@@ -16,7 +16,7 @@ export async function loginService(data: loginType) {
       .innerJoin("users.role","role")
       .select(["name", "email", "password", "id"])
       .addSelect("role_name","role")
-      .where("email = :email", { email })
+      .where("email = :email", { email:email.toLowerCase() })
       .execute();
 
     if (checkUser.length <= 0) {
@@ -44,11 +44,11 @@ export async function loginService(data: loginType) {
 export async function registerService(data: registerType) {
   try {
     const { email, name, password, role } = data;
-
+    const uemail=email.toLowerCase()
     const checkUser = await usersRepo
       .createQueryBuilder()
       .select("name")
-      .where("email = :email", { email })
+      .where("email = :email", { email:uemail })
       .execute();
 
     if (checkUser.length > 0) {
@@ -67,7 +67,7 @@ export async function registerService(data: registerType) {
       throw new AppError(400,"Invalid role selected");
     } 
     const createUser = usersRepo.create({
-      email,
+      email:uemail,
       password: hashedPassword,
       role: {
         role_id:getRole.role_id
