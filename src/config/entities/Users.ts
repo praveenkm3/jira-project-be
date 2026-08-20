@@ -11,6 +11,7 @@ import {
 import { Role } from "./Roles.ts";
 import { Projects } from "./Projects.ts";
 import { ProjectMembers } from "./ProjectMembers.ts";
+import { Designation } from "./Designation.tsx";
 export enum UserStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -53,6 +54,12 @@ export class Users {
   })
   status!: UserStatus;
 
+  @ManyToOne(() => Designation, (designation) => designation.users, {
+    nullable: true,
+  })
+  @JoinColumn({ name: "designation_id" })
+  designation?: Designation;
+
   @CreateDateColumn({
     type: "timestamp",
     name: "created_at",
@@ -65,7 +72,6 @@ export class Users {
   })
   updatedAt!: Date;
 
-  //bidirectional
   @OneToMany(() => Projects, (project) => project.created_by)
   projects!: Projects[];
 

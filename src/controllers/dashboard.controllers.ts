@@ -16,8 +16,10 @@ export const getProgressCounts = async (
 ) => {
   try {
     const userId = req.user?.id;
+    const role = req.user?.role;
     const response: progressCountType = await progressCountServices(
       userId as string,
+      role as string
     );
     return res.status(200).json(response);
   } catch (error) {

@@ -2,7 +2,8 @@ export type registerType = {
   name: string;
   email: string;
   password: string;
-  role: "admin" | "developer";
+  role: string;
+  designation_id:string;
 };
 export type loginType = { 
   email: string;
@@ -15,6 +16,7 @@ export interface tokenObject {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: tokenObject; 

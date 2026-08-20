@@ -9,7 +9,7 @@ import { ProjectMembers } from "./entities/ProjectMembers.ts";
 import { Issues } from "./entities/Issues.ts";
 import { Role } from "./entities/Roles.ts";
 import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
-
+import { Designation } from "./entities/Designation.tsx";
 
 
 const DB_USER =process.env.DB_USER
@@ -29,7 +29,7 @@ export const AppDataSource = new DataSource({
     password: DB_PASSWORD as string,
     database: DB_NAME as string,
     synchronize: false,
-    logging: false,
-    entities: [Users,Projects,Notifications,Comments,ProjectMembers,Issues,Role,ProjectStatuses],
+    logging: true,
+    entities: [Users,Projects,Notifications,Comments,ProjectMembers,Issues,Role,ProjectStatuses,Designation],
     migrations: ["src/migrations/**/*.ts"],
 })

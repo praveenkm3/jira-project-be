@@ -10,6 +10,7 @@ import projectRouter from "./routes/project.routes.ts";
 import memberRouter from "./routes/member.routes.ts";
 import issueRouter from "./routes/issue.routes.ts";
 import userRouter from "./routes/user.routes.ts";
+import designationRouter from "./routes/designation.routes.ts";
 import commentRouter from "./routes/comment.routes.ts";
 import notifyRouter from "./routes/notifications.routes.ts";
 import boardRouter from "./routes/dashboard.routes.ts";
@@ -50,17 +51,17 @@ app.use("/api/", userRouter);
 app.use("/api/comments", commentRouter);
 app.use("/api/notifications", notifyRouter);
 app.use("/api/boards", boardRouter);
+app.use('/designations',designationRouter)
 app.use(errorHandler);
 try {
-  await AppDataSource.initialize();
-  console.log("database connected");
+  await AppDataSource.initialize(); 
 
   const server = createServer(app);
   const web_socket = new WebSocketServer({ server });
 
   web_socket.on("connection", async (socket, request) => {
     const cookieHeader = request.headers.cookie;
-    const user_id = await authenticateWebsocket(cookieHeader!);
+    const user_id:string = await authenticateWebsocket(cookieHeader!)as string;
 
     addConnection(user_id, socket);
     

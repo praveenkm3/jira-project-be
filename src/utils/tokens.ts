@@ -16,11 +16,11 @@ export function generateRefreshToken({email,role,id}:tokenObject){
     return refreshToken;
 }
 
-export function validateAccessToken(accessToken:string){
+export function validateAccessToken(accessToken:string):[boolean, tokenObject | null]{
     try{
         const payload=jwt.verify(accessToken,ACCESS_SECRET);
         return [true,payload as tokenObject]
-    }catch(error){
+    }catch{
         return [false,null];
     }
 }
@@ -29,7 +29,7 @@ export function validateRefreshToken(refreshToken:string){
     try{
         const payload=jwt.verify(refreshToken,REFRESH_SECRET);
             return [true,payload]
-    }catch(error){
+    }catch{
         return [false,null];
     }
 }

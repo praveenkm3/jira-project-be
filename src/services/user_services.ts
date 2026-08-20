@@ -7,10 +7,12 @@ export const getUsersService = async (userId: string) => {
     const result: usersReturnType[] = await usersRepo
       .createQueryBuilder("user")
       .innerJoin("user.role", "role")
+      .leftJoin("user.designation", "designation")
       .select("user.id", "id")
       .addSelect("user.name", "name")
       .addSelect("user.email", "email")
       .addSelect("role.role_name", "role")
+      .addSelect("designation.designation_name", "designation")
       .where("user.id != :uid", { uid: userId })
       .getRawMany();
     return result;
@@ -24,10 +26,12 @@ export const getSpecificUserService = async (uid: string) => {
     const result: usersReturnType[] | undefined = await usersRepo
       .createQueryBuilder("user")
       .innerJoin("user.role", "role")
+      .leftJoin("user.designation", "designation")
       .select("user.id", "id")
       .addSelect("user.name", "name")
       .addSelect("user.email", "email")
       .addSelect("role.role_name", "role")
+      .addSelect("designation.designation_name", "designation")
       .where("user.id = :uid", { uid })
       .getRawOne();
 

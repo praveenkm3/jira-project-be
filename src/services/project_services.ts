@@ -250,6 +250,7 @@ export async function getAllProjectMembersService(projectId: string) {
     .innerJoin("project.members", "members")
     .innerJoin("members.user", "user")
     .innerJoin("user.role", "role")
+    .leftJoin("user.designation", "designation")
     .where("project.project_id = :pid", { pid: projectId })
     .select([
       "user.id AS id",
@@ -257,9 +258,11 @@ export async function getAllProjectMembersService(projectId: string) {
       "user.status AS status",
       "user.email AS email",
       "role.role_name AS role",
+      "designation.designation_name AS designation",
       "user.createdAt AS joinedAt",
     ])
     .getRawMany();
+
   return result;
 }
 export async function specificProjectStatusesService(projectId: string) {

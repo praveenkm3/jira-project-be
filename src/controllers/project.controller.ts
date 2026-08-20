@@ -11,7 +11,6 @@ import {
   specificProjectStatusesService,
   addStatusesToProjectService
 } from "../services/project_services.ts";
-import { projectRepo } from "../config/repos.ts";
 
 export async function createProject(
   req: Request,
@@ -136,10 +135,9 @@ export async function getAllProjectMembers(
   res: Response,
   next: NextFunction,
 ) {
-  try {
-    const user = req.user;
+  try { 
     const {pid=''}=req.params;
-    const response = await getAllProjectMembersService(pid as string,user?.id as string);
+    const response = await getAllProjectMembersService(pid as string);
     return res.status(201).json(response);
   } catch (error) {
     next(error);

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { registerService } from "../services/auth_services.ts";
+import { getDesignationService, registerService } from "../services/auth_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { loginService ,getRoleService} from "../services/auth_services.ts";
 import "dotenv/config";
@@ -97,6 +97,18 @@ export async function getRoles(
 ) {
   try {  
     const response = await getRoleService();
+    return res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+}
+export async function getDesignations(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {  
+    const response = await getDesignationService();
     return res.status(201).json(response);
   } catch (error) {
     next(error);

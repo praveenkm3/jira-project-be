@@ -6,6 +6,7 @@ import { ProjectMembers } from "./entities/ProjectMembers.ts";
 import { Issues } from "./entities/Issues.ts";
 import { Role } from "./entities/Roles.ts";
 import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
+import { Designation } from "./entities/Designation.tsx";
 import { AppDataSource } from "./db.ts";
 
 
@@ -17,5 +18,6 @@ export const projectMemberRepo = AppDataSource.getRepository(ProjectMembers);
 export const issueRepo = AppDataSource.getRepository(Issues);
 export const roleRepository = AppDataSource.getRepository(Role);
 export const statusRepository = AppDataSource.getRepository(ProjectStatuses);
+export const designationRepository = AppDataSource.getRepository(Designation);
 
 

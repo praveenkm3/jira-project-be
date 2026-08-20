@@ -22,8 +22,7 @@ export async function getSpecificUsers(
   res: Response,
   next: NextFunction,
 ) {
-  try {
-    const userId=req.user?.id as string;
+  try { 
     const{uid}=req.params;
     const specificUser=await getSpecificUserService (uid as string);
     return res.status(200).json(specificUser);

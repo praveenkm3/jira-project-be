@@ -1,43 +1,67 @@
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { issueRepo } from "../config/repos.ts";
+import { issueRepo, projectMemberRepo } from "../config/repos.ts";
 import { MoreThanOrEqual } from "typeorm";
 import { AppDataSource } from "../config/db.ts";
 import { ProjectStatuses } from "../config/entities/ProjectStatuses.ts";
 
-export const progressCountServices = async (userId: string) => {
+export const progressCountServices = async (userId: string, role: string) => {
   try {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const query2 = await issueRepo.count({
-      where: [
-        {
-          updatedAt: MoreThanOrEqual(sevenDaysAgo),
-          assignee: {
-            id: userId,
+    let query1;
+    if (role !== "admin") {
+      query1=await issueRepo.count({
+        where: [
+          {
+            updatedAt: MoreThanOrEqual(sevenDaysAgo),
+            assignee: {
+              id: userId,
+            },
           },
-        },
-      ],
-    });
-    const query3 = await issueRepo.count({
+        ],
+      });
+    }else{
+      query1=await projectMemberRepo
+      .createQueryBuilder("projectMember")
+      .innerJoin("projectMember.user","user")
+      .innerJoin("user.role","role")
+      .where("role.role_name = :user_role",{user_role:"admin"})
+      .andWhere("user.id = :userId", { userId })
+      .getCount()
+    }
+    const query2 = await issueRepo.count({
       where: {
         reporter: {
           id: userId,
         },
       },
     });
-    const query4 = await issueRepo.count({
-      where: {
-        assignee: {
-          id: userId,
+    let query3;
+    if (role !== "admin") {
+      query3 = await issueRepo.count({
+        where: {
+          assignee: {
+            id: userId,
+          },
+          issue_due_date: MoreThanOrEqual(new Date()),
         },
-        issue_due_date: MoreThanOrEqual(new Date()),
-      },
-    });
+      });
+    } else {
+      query3 = await issueRepo
+        .createQueryBuilder("issue")
+        .innerJoin("issue.project", "project")
+        .innerJoin("project.members", "member")
+        .innerJoin("member.user", "user")
+        .where("user.id = :userId", { userId })
+        .andWhere("issue.issue_due_date >= CURRENT_DATE")
+        .getCount();
+    }
+
     return {
-      updated: query2,
-      created: query3,
-      dues_count: query4,
+      updated: query1,
+      created: query2,
+      dues_count: query3,
     };
   } catch {
     throw new AppError(

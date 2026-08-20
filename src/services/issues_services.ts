@@ -493,6 +493,7 @@ export async function getProjectMembersService(
       .innerJoin("project.members", "members")
       .innerJoin("members.user", "user")
       .innerJoin("user.role", "role")
+      .innerJoin("user.designation", "designation")
       .where("project.project_id = :pid", { pid: projectId })
       .andWhere("role.role_name != :role", { role: "admin" })
       .andWhere("user.id != :userId", { userId })
@@ -501,6 +502,7 @@ export async function getProjectMembersService(
         "user.name AS name",
         "user.email AS email",
         "role.role_name AS role",
+        "designation.designation_name AS designation"
       ])
       .getRawMany();
     return result;
