@@ -25,9 +25,10 @@ export async function checkProjectAdmin(
   .createQueryBuilder("project")
   .innerJoin("project.members", "member")
   .innerJoin("member.user", "memberUser")
+  .innerJoin("memberUser.role", "role")
   .where("project.project_id = :pid", { pid })
   .andWhere("memberUser.id = :userId", { userId: user.id })
-  .andWhere("memberUser.role = :role", { role: "admin" })
+  .andWhere("role.role_name = :role", { role: "admin" })
   .getOne();
 
   if (!project) {

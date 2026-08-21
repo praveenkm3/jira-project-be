@@ -1,32 +1,39 @@
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Users } from "../config/entities/Users.ts";
 import { usersRepo } from "../config/repos.ts";
-import type{ usersReturnType } from "../types/user.types.ts";
-
-
+import type { usersReturnType } from "../types/user.types.ts";
 
 export const getUsersService = async (userId: string) => {
   try {
-    const result:usersReturnType[]=await usersRepo
-    .createQueryBuilder("user")
-    .select(["user.id","user.name","user.email","user.role"])
-    .where("user.id != :uid",{uid:userId})
-    .getMany();
+    const result: usersReturnType[] = await usersRepo
+      .createQueryBuilder("user")
+      .innerJoin("user.role", "role")
+      .select("user.id", "id")
+      .addSelect("user.name", "name")
+      .addSelect("user.email", "email")
+      .addSelect("role.role_name", "role")
+      .where("user.id != :uid", { uid: userId })
+      .getRawMany();
     return result;
   } catch (error) {
-    throw new AppError(404,"users not found");
+    throw new AppError(404, "users not found");
   }
 };
 
 export const getSpecificUserService = async (uid: string) => {
   try {
-    const result:usersReturnType | null=await usersRepo
-    .createQueryBuilder("user")
-    .select(["user.id","user.name","user.email","user.role"])
-    .where("user.id = :uid",{uid:uid})
-    .getOne();
+    const result: usersReturnType[] | undefined = await usersRepo
+      .createQueryBuilder("user")
+      .innerJoin("user.role", "role")
+      .select("user.id", "id")
+      .addSelect("user.name", "name")
+      .addSelect("user.email", "email")
+      .addSelect("role.role_name", "role")
+      .where("user.id = :uid", { uid })
+      .getRawOne();
+
     return result;
   } catch (error) {
-    throw new AppError(404,"user not found");
+    throw new AppError(404, "user not found");
   }
-}
+};

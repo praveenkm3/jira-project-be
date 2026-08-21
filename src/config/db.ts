@@ -7,8 +7,8 @@ import { Notifications } from "./entities/Notifications.ts";
 import { Comments } from "./entities/Comments.ts";
 import { ProjectMembers } from "./entities/ProjectMembers.ts";
 import { Issues } from "./entities/Issues.ts";
-
-
+import { Role } from "./entities/Roles.ts";
+import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
 
 
 
@@ -30,6 +30,6 @@ export const AppDataSource = new DataSource({
     database: DB_NAME as string,
     synchronize: false,
     logging: true,
-    entities: [Users,Projects,Notifications,Comments,ProjectMembers,Issues],
+    entities: [Users,Projects,Notifications,Comments,ProjectMembers,Issues,Role,ProjectStatuses],
     migrations: ["src/migrations/**/*.ts"],
 })

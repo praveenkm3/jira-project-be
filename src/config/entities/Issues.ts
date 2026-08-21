@@ -9,12 +9,8 @@ import {
 } from "typeorm";
 import { Projects } from "./Projects.ts";
 import { Users } from "./Users.ts";
+import { ProjectStatuses } from "./ProjectStatuses.ts";
 
-export enum IssueStatus {
-  OPEN = "Open",
-  INPROGRESS = "In Progress",
-  Done = "Done",
-}
 export enum IssuePriority {
   HIGH = "High",
   MEDIUM = "Medium",
@@ -23,7 +19,7 @@ export enum IssuePriority {
 export enum IssueType {
   BUG = "Bug",
   TASK = "Task",
-  FEATURE= "Feature",
+  FEATURE = "Feature",
 }
 @Entity("issues")
 export class Issues {
@@ -38,14 +34,14 @@ export class Issues {
   project!: Projects;
 
   @Column({
-    type: "int"
+    type: "int",
   })
   issue_number!: number;
 
   @Column({
     type: "varchar",
     length: 200,
-    unique:true
+    unique: true,
   })
   issue_title!: string;
 
@@ -56,8 +52,8 @@ export class Issues {
 
   @Column({
     type: "enum",
-    enum:IssueType,
-    nullable:true
+    enum: IssueType,
+    nullable: true,
   })
   issue_type!: string;
 
@@ -68,12 +64,12 @@ export class Issues {
   })
   issue_priority!: string;
 
-  @Column({
-    type: "enum",
-    enum: IssueStatus,
-    nullable: false,
+  @ManyToOne(() => ProjectStatuses, {
+    nullable: true,
+    onDelete: "RESTRICT",
   })
-  issue_status!: string;
+  @JoinColumn({ name: "status_id" })
+  issue_status!: ProjectStatuses;
 
   @ManyToOne(() => Users, {
     nullable: true,
@@ -87,6 +83,12 @@ export class Issues {
   })
   @JoinColumn({ name: "reporter_id" })
   reporter!: Users;
+
+  @Column({
+    type: "date",
+    nullable: true,
+  })
+  issue_start_date!: Date | null;
 
   @Column({
     type: "date",

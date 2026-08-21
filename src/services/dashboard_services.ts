@@ -1,20 +1,14 @@
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { issueRepo } from "../config/repos.ts";
+import { issueRepo, usersRepo } from "../config/repos.ts";
 import { MoreThanOrEqual } from "typeorm";
+import { AppDataSource } from "../config/db.ts";
+import { ProjectStatuses } from "../config/entities/ProjectStatuses.ts";
 
 export const progressCountServices = async (userId: string) => {
   try {
-    const query1 = await issueRepo.count({
-      where: {
-        assignee: {
-          id: userId,
-        },
-        issue_status: "Done",
-      },
-    });
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
+    
     const query2 = await issueRepo.count({
       where: [
         {
@@ -40,8 +34,7 @@ export const progressCountServices = async (userId: string) => {
         issue_due_date: MoreThanOrEqual(new Date()),
       },
     });
-    return {
-      completed: query1,
+    return { 
       updated: query2,
       created: query3,
       dues_count: query4,
@@ -53,32 +46,48 @@ export const progressCountServices = async (userId: string) => {
 
 export const statusCountServices = async (
   userId: string,
-  role: string
+  role: string,
 ) => {
   try {
-    const queryBuilder = issueRepo
-      .createQueryBuilder("issue")
-      .select("issue.issue_status", "status")
-      .addSelect("COUNT(issue.issue_id)", "count");
-
+    const queryBuilder = AppDataSource
+      .getRepository(ProjectStatuses)
+      .createQueryBuilder("status")
+      .innerJoin("status.project", "project")
+      .innerJoin("project.members", "member")
+      .leftJoin(
+        "Issues",
+        "issue",
+        "issue.status_id = status.status_id",
+      )
+      .select("status.status_id", "status_id")
+      .addSelect("status.status_name", "status_name")
+      .addSelect("COUNT(DISTINCT issue.issue_id)", "count")
     if (role === "admin") {
-      queryBuilder
-        .innerJoin("issue.project", "project")
-        .innerJoin("project.members", "member")
-        .where("member.member_id = :userId", { userId });
+      queryBuilder.where(
+        "member.member_id = :userId",
+        { userId },
+      );
     } else {
       queryBuilder
-        .innerJoin("issue.assignee", "assignee")
-        .where("assignee.id = :userId", { userId });
+        .andWhere(
+          "issue.assignee_id = :userId",
+          { userId },
+        );
     }
 
     return await queryBuilder
-      .groupBy("issue.issue_status")
+      .groupBy("status.status_id")
+      .addGroupBy("status.status_name")
+      .having("COUNT(DISTINCT issue.issue_id) > 0")
       .getRawMany();
   } catch (error) {
-    throw new AppError(500, "Failed to fetch status counts");
+    throw new AppError(
+      500,
+      "Failed to fetch status counts",
+    );
   }
 };
+
 export const priorityCountServices = async (
   userId: string,
   role: string
