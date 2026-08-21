@@ -8,7 +8,7 @@ import {
   getAllProjects,
   getAllProjectsForSearch,
   getSpecificStatusesProject,
-  addStatusesToProject
+  addStatusesToProject,
 } from "../controllers/project.controller.ts";
 import { checkProjectAdmin } from "../middlewares/projectMiddleware.ts";
 

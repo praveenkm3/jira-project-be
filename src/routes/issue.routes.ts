@@ -7,7 +7,7 @@ import {
   getProjectIssues,
   getProjectMembers,
   deleteIssue,
-  getSpecificIssue
+  getSpecificIssue,
 } from "../controllers/issues.controller.ts";
 
 const issueRouter = Router();

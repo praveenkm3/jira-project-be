@@ -2,18 +2,18 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 
 import { Users } from "./Users.ts";
 
-@Entity("roles")
-export class Role {
+@Entity("designations")
+export class Designation {
   @PrimaryGeneratedColumn("uuid")
-  role_id!: string;
+  designation_id!: string;
 
   @Column({
     type: "varchar",
     length: 100,
     unique: true,
   })
-  role_name!: string;
+  designation_name!: string;
 
-  @OneToMany(() => Users, (user) => user.role)
+  @OneToMany(() => Users, (user) => user.designation)
   users!: Users[];
 }

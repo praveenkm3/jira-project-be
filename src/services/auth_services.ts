@@ -4,8 +4,12 @@ import { AppError } from "../middlewares/errorMiddleware.ts";
 import { generateAccessToken, generateRefreshToken } from "../utils/tokens.ts";
 import type { tokenObject } from "../types/auth.types.ts";
 import { encryptToken } from "../utils/hashCookie.ts";
-import { roleRepository, usersRepo } from "../config/repos.ts";
-import { hashPassword } from "../utils/hashPassword.ts"; 
+import {
+  roleRepository,
+  usersRepo,
+  designationRepository,
+} from "../config/repos.ts";
+import { hashPassword } from "../utils/hashPassword.ts";
 
 export async function loginService(data: loginType) {
   try {
@@ -13,10 +17,10 @@ export async function loginService(data: loginType) {
 
     const checkUser = await usersRepo
       .createQueryBuilder("users")
-      .innerJoin("users.role","role")
+      .innerJoin("users.role", "role")
       .select(["name", "email", "password", "id"])
-      .addSelect("role_name","role")
-      .where("email = :email", { email:email.toLowerCase() })
+      .addSelect("role_name", "role")
+      .where("email = :email", { email: email.toLowerCase() })
       .execute();
 
     if (checkUser.length <= 0) {
@@ -26,10 +30,10 @@ export async function loginService(data: loginType) {
 
     if (checkPassword) {
       const { id, email, role }: tokenObject = checkUser[0];
-      const access_token:string = generateAccessToken({ email, id, role });
-      const refresh_token:string = generateRefreshToken({ email, id, role });
-      const access_decrypt:string = encryptToken(access_token);
-      const refresh_decrypt:string = encryptToken(refresh_token);
+      const access_token: string = generateAccessToken({ email, id, role });
+      const refresh_token: string = generateRefreshToken({ email, id, role });
+      const access_decrypt: string = encryptToken(access_token);
+      const refresh_decrypt: string = encryptToken(refresh_token);
       return [access_decrypt, refresh_decrypt, { id, email, role }];
     } else {
       throw new AppError(401, "Incorrect Password");
@@ -43,12 +47,12 @@ export async function loginService(data: loginType) {
 }
 export async function registerService(data: registerType) {
   try {
-    const { email, name, password, role } = data;
-    const uemail=email.toLowerCase()
+    const { email, name, password, role, designation_id } = data;
+    const uemail = email.toLowerCase();
     const checkUser = await usersRepo
       .createQueryBuilder()
       .select("name")
-      .where("email = :email", { email:uemail })
+      .where("email = :email", { email: uemail })
       .execute();
 
     if (checkUser.length > 0) {
@@ -58,21 +62,28 @@ export async function registerService(data: registerType) {
       };
     }
     const hashedPassword = await hashPassword(password);
-    const getRole=await roleRepository.findOne({
-      where:{
-        role_id:role
-      }
+    const getRole = await roleRepository.findOne({
+      where: {
+        role_id: role,
+      },
     });
-    if(!getRole){
-      throw new AppError(400,"Invalid role selected");
-    } 
+    if (!getRole) {
+      throw new AppError(400, "Invalid role selected");
+    }
     const createUser = usersRepo.create({
-      email:uemail,
+      email: uemail,
       password: hashedPassword,
       role: {
-        role_id:getRole.role_id
+        role_id: getRole.role_id,
       },
       name,
+      ...(getRole.role_name === "user"
+        ? {
+            designation: {
+              designation_id,
+            },
+          }
+        : {}),
     });
 
     usersRepo.save(createUser);
@@ -80,15 +91,23 @@ export async function registerService(data: registerType) {
       created: true,
       message: "User Registered Successfully",
     };
-  } catch (error) {
+  } catch {
     throw new AppError(400, "Registration Failed");
   }
 }
 export async function getRoleService() {
   try {
-    const response=await roleRepository.find();
+    const response = await roleRepository.find();
     return response;
-  } catch (error) {
-    throw new AppError(500,"Unable to fetch roles");
+  } catch {
+    throw new AppError(500, "Unable to fetch roles");
+  }
+}
+export async function getDesignationService() {
+  try {
+    const response = await designationRepository.find();
+    return response;
+  } catch {
+    throw new AppError(500, "Unable to fetch designations");
   }
 }

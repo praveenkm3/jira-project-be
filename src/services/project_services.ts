@@ -1,7 +1,4 @@
-import type {
-  createProjectType,
-  singleProject,
-} from "../types/project.types.ts";
+import type { createProjectType } from "../types/project.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Projects } from "../config/entities/Projects.ts";
 import {
@@ -52,7 +49,7 @@ export const createProjectService = async (
         message: "Project created successfully",
       };
     });
-  } catch (error) {
+  } catch {
     throw new AppError(400, "Error while creating Project");
   }
   return result;
@@ -66,7 +63,6 @@ export const deleteProjectService = async (
     .delete()
     .from(Projects)
     .where("project_id = :projectId", { projectId })
-    // .andWhere("created_by = :userId", { userId })
     .execute();
 
   if (result.affected === 0) {
@@ -231,7 +227,7 @@ export const allProjectsService = async (userId: string, role: string) => {
     }
 
     return await query.getMany();
-  } catch (error) {
+  } catch {
     throw new AppError(500, "Fetching projects failed");
   }
 };
@@ -244,19 +240,17 @@ export const myProjectsForSearchService = async (userId: string) => {
       .where("member.member_id = :userId", { userId })
       .orderBy("project.project_name", "ASC")
       .getMany();
-  } catch (error) {
+  } catch {
     throw new AppError(500, "fetching failed for user projects ");
   }
 };
-export async function getAllProjectMembersService(
-  projectId: string,
-  userId: string,
-) {
+export async function getAllProjectMembersService(projectId: string) {
   const result = projectRepo
     .createQueryBuilder("project")
     .innerJoin("project.members", "members")
     .innerJoin("members.user", "user")
     .innerJoin("user.role", "role")
+    .leftJoin("user.designation", "designation")
     .where("project.project_id = :pid", { pid: projectId })
     .select([
       "user.id AS id",
@@ -264,9 +258,11 @@ export async function getAllProjectMembersService(
       "user.status AS status",
       "user.email AS email",
       "role.role_name AS role",
+      "designation.designation_name AS designation",
       "user.createdAt AS joinedAt",
     ])
     .getRawMany();
+
   return result;
 }
 export async function specificProjectStatusesService(projectId: string) {
@@ -327,7 +323,7 @@ export async function addStatusesToProjectService(
     } else {
       throw error;
     }
-  } catch (error) {
+  } catch {
     throw new AppError(500, "Status was not added");
   }
 }

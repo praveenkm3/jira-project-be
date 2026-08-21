@@ -1,6 +1,4 @@
-import { commentsRepo, projectMemberRepo, issueRepo } from "../config/repos.ts";
 import { Comments } from "../config/entities/Comments.ts";
-import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
 import { AppDataSource } from "../config/db.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { Issues } from "../config/entities/Issues.ts";
@@ -11,7 +9,7 @@ export async function addCommentService(
   comment: string,
 ) {
   try {
-    const result = await AppDataSource.transaction(async (manager) => {
+    await AppDataSource.transaction(async (manager) => {
       const check1 = await manager.existsBy(Issues, {
         issue_id: issueId,
         project: {
@@ -92,23 +90,23 @@ export async function editCommentService(
           "Comment not found or you are not allowed to edit it",
         );
       }
-      return{
-        updatedComment:true,
-        message:"Comment updated successfully"
-      }
+      return {
+        updatedComment: true,
+        message: "Comment updated successfully",
+      };
     });
     return query;
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
     }
-    throw new AppError(500, "DB Error ,Something went wrong at editing comment");
+    throw new AppError(
+      500,
+      "DB Error ,Something went wrong at editing comment",
+    );
   }
 }
-export async function deleteCommentService(
-  commentId: string,
-  userId: string,
-) {
+export async function deleteCommentService(commentId: string, userId: string) {
   try {
     const query = await AppDataSource.transaction(async (manager) => {
       const checkComment = await manager.findOne(Comments, {
@@ -152,13 +150,15 @@ export async function deleteCommentService(
     if (error instanceof AppError) {
       throw error;
     }
-    throw new AppError(500, "DB Error ,Something went wrong at deleting comment");
+    throw new AppError(
+      500,
+      "DB Error ,Something went wrong at deleting comment",
+    );
   }
 }
 export async function getCommentService(issueId: string) {
   try {
-    const comments = await AppDataSource
-      .getRepository(Comments)
+    const comments = await AppDataSource.getRepository(Comments)
       .createQueryBuilder("comment")
       .leftJoinAndSelect("comment.created", "creator")
       .where("comment.issue_id = :issueId", { issueId })
@@ -188,4 +188,42 @@ export async function getCommentService(issueId: string) {
     );
   }
 }
-  
+
+export async function getCommentsByUserService(userId: string) {
+  try {
+    const comments = await AppDataSource.getRepository(Comments)
+      .createQueryBuilder("comment")
+      .leftJoinAndSelect("comment.created", "creator")
+      .leftJoinAndSelect("comment.issue_id", "issue")
+      .where("creator.id = :userId", { userId })
+      .orderBy("comment.created_at", "DESC")
+      .getMany();
+
+    return comments.map((comment) => ({
+      comment_id: comment.comment_id,
+      comment: comment.comment,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+
+      creator: {
+        id: comment.created.id,
+        name: comment.created.name,
+        email: comment.created.email,
+      },
+
+      issue: {
+        issue_id: comment.issue_id.issue_id,
+        title: comment.issue_id.issue_title,
+      },
+    }));
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      500,
+      "DB Error, Something went wrong while fetching comments",
+    );
+  }
+}

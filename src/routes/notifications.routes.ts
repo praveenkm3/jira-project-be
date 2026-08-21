@@ -1,13 +1,13 @@
 import { Router } from "express";
 
-const notifyRouter=Router();
+const notifyRouter = Router();
 
-import { getNotifications } from "../controllers/notification.controllers.ts";
+import {
+  getNotifications,
+  readNotifications,
+} from "../controllers/notification.controllers.ts";
 
-
-notifyRouter.get('/',getNotifications);
-
-
-
+notifyRouter.get("/", getNotifications);
+notifyRouter.patch("/:notification_id", readNotifications);
 
 export default notifyRouter;

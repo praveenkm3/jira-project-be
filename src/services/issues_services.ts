@@ -10,9 +10,8 @@ import { Issues } from "../config/entities/Issues.ts";
 import { Projects } from "../config/entities/Projects.ts";
 import { Notifications } from "../config/entities/Notifications.ts";
 import { Users } from "../config/entities/Users.ts";
-import { ILike } from "typeorm";
 import type { ProjectStatuses } from "../config/entities/ProjectStatuses.ts";
-
+import { sendNotificationToUser } from "./websocket/websocket.services.ts";
 export type issueUpdateType = Partial<issueCreatetype>;
 
 export async function createIssueService(
@@ -132,7 +131,7 @@ export async function createIssueService(
       project.next_issue_number = issueNumber;
       await manager.save(Issues, issueCreation);
       await manager.save(Projects, project);
-      //create notifications
+
       const notificationCreation = await manager.create(Notifications, {
         created_by: {
           id: userId,
@@ -147,6 +146,7 @@ export async function createIssueService(
         message: `You have been assigned to ticket, ${title}`,
       });
       await manager.save(Notifications, notificationCreation);
+      sendNotificationToUser(assignee_id, notificationCreation);
       return {
         issueCreated: true,
         message: "Issue created successfully",
@@ -245,38 +245,25 @@ export async function editIssueService(
             ? new Date(due_date)
             : null
           : currentDueDate;
-          const today = new Date();
+      const today = new Date();
       today.setHours(0, 0, 0, 0);
- 
+
       if (finalStartDate) {
         finalStartDate.setHours(0, 0, 0, 0);
 
         if (finalStartDate < today) {
-          throw new AppError(
-            400,
-            "Start date cannot be in the past",
-          );
+          throw new AppError(400, "Start date cannot be in the past");
         }
       }
       if (finalDueDate) {
         finalDueDate.setHours(0, 0, 0, 0);
 
         if (finalDueDate < today) {
-          throw new AppError(
-            400,
-            "Due date cannot be in the past",
-          );
+          throw new AppError(400, "Due date cannot be in the past");
         }
       }
-      if (
-        finalStartDate &&
-        finalDueDate &&
-        finalStartDate > finalDueDate
-      ) {
-        throw new AppError(
-          400,
-          "Start date cannot be after due date",
-        );
+      if (finalStartDate && finalDueDate && finalStartDate > finalDueDate) {
+        throw new AppError(400, "Start date cannot be after due date");
       }
       const updates: Partial<Issues> = {};
       if (title !== undefined) updates.issue_title = title;
@@ -289,7 +276,7 @@ export async function editIssueService(
         } as ProjectStatuses;
       }
       if (due_date !== undefined) updates.issue_due_date = due_date as Date;
-      if (start_date !== undefined) updates.issue_start_date= start_date as Date;
+      if (start_date) updates.issue_start_date = start_date as Date;
       if (assignee_id !== undefined) {
         updates.assignee = { id: assignee_id } as Users;
       }
@@ -377,7 +364,10 @@ export async function getIssueService(userId: string, search: string) {
 
     return result;
   } catch (error) {
-    throw new AppError(400, "Issue fetching failed");
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, "DB Error ,Issue fetching failed");
   }
 }
 export async function changeIssueStatusService(
@@ -434,64 +424,59 @@ export async function getProjectIssueService(
   filterColumn: string | undefined,
   filterValue: string | undefined,
 ) {
-  try {
-    const query = await issueRepo
-      .createQueryBuilder("issues")
-      .innerJoin("issues.project", "project")
-      .innerJoin("issues.issue_status", "status")
-      .innerJoin("issues.reporter", "reporter")
-      .innerJoin("issues.assignee", "assignee")
-      .where("project.project_id = :projectId", { projectId });
-    if (filterColumn === "issue_number") {
-      query.andWhere(`issues.${filterColumn}>= `);
-    } else if (filterColumn?.startsWith("assignee")) {
-      query.andWhere(`assignee.email ILIKE :value`, {
-        value: `%${filterValue}%`,
-      });
-    } else if (filterColumn?.startsWith("reporter")) {
-      query.andWhere(`reporter.email ILIKE :value`, {
-        value: `%${filterValue}%`,
-      });
-    } else if (filterColumn && filterValue) {
-      query.andWhere(`issues.${filterColumn} ILIKE :value`, {
-        value: `%${filterValue}%`,
-      });
-    }
-    query.select([
-      "issues.issue_id",
-      "issues.issue_number",
-      "issues.issue_title",
-      "issues.issue_description",
-      "issues.issue_type",
-      "issues.issue_priority",
-      "issues.issue_type",
-      "issues.issue_due_date",
-      "issues.issue_start_date",
-      "issues.createdAt",
-      "issues.updatedAt",
-
-      "status.status_name",
-      "status.status_id",
-
-      "reporter.email",
-      "reporter.id",
-      "reporter.name",
-
-      "assignee.email",
-      "assignee.id",
-      "assignee.name",
-    ]);
-    const totalRecords = (await query.getMany()).length;
-    query.limit(Number(recordsPerPage));
-    const skipRecords =
-      Number(pageNumber) <= 0 ? 0 : Number(pageNumber) * Number(recordsPerPage);
-    query.offset(skipRecords);
-    const result = await query.getMany();
-    console.log(totalRecords);
-    return { totalRecords: totalRecords, result: result };
-  } catch (error) {
-    throw error;
+  const query = await issueRepo
+    .createQueryBuilder("issues")
+    .innerJoin("issues.project", "project")
+    .innerJoin("issues.issue_status", "status")
+    .innerJoin("issues.reporter", "reporter")
+    .innerJoin("issues.assignee", "assignee")
+    .where("project.project_id = :projectId", { projectId });
+  if (filterColumn === "issue_number") {
+    query.andWhere(`issues.${filterColumn}>= `);
+  } else if (filterColumn?.startsWith("assignee")) {
+    query.andWhere(`assignee.email ILIKE :value`, {
+      value: `%${filterValue}%`,
+    });
+  } else if (filterColumn?.startsWith("reporter")) {
+    query.andWhere(`reporter.email ILIKE :value`, {
+      value: `%${filterValue}%`,
+    });
+  } else if (filterColumn && filterValue) {
+    query.andWhere(`issues.${filterColumn} ILIKE :value`, {
+      value: `%${filterValue}%`,
+    });
   }
+  query.select([
+    "issues.issue_id",
+    "issues.issue_number",
+    "issues.issue_title",
+    "issues.issue_description",
+    "issues.issue_type",
+    "issues.issue_priority",
+    "issues.issue_type",
+    "issues.issue_due_date",
+    "issues.issue_start_date",
+    "issues.createdAt",
+    "issues.updatedAt",
+
+    "status.status_name",
+    "status.status_id",
+
+    "reporter.email",
+    "reporter.id",
+    "reporter.name",
+
+    "assignee.email",
+    "assignee.id",
+    "assignee.name",
+  ]);
+  const totalRecords = (await query.getMany()).length;
+  query.limit(Number(recordsPerPage));
+  const skipRecords =
+    Number(pageNumber) <= 0 ? 0 : Number(pageNumber) * Number(recordsPerPage);
+  query.offset(skipRecords);
+  const result = await query.getMany();
+  return { totalRecords: totalRecords, result: result };
 }
 export async function getProjectMembersService(
   projectId: string,
@@ -503,6 +488,7 @@ export async function getProjectMembersService(
       .innerJoin("project.members", "members")
       .innerJoin("members.user", "user")
       .innerJoin("user.role", "role")
+      .innerJoin("user.designation", "designation")
       .where("project.project_id = :pid", { pid: projectId })
       .andWhere("role.role_name != :role", { role: "admin" })
       .andWhere("user.id != :userId", { userId })
@@ -511,13 +497,17 @@ export async function getProjectMembersService(
         "user.name AS name",
         "user.email AS email",
         "role.role_name AS role",
+        "designation.designation_name AS designation",
       ])
       .getRawMany();
     return result;
   } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
     throw new AppError(
       500,
-      "DB Error, Something went wrong while fetching project members",
+      "DB Error ,Something went wrong while fetching project members",
     );
   }
 }
@@ -610,7 +600,7 @@ export async function getIssueByIdService(issueId: string) {
         project: true,
         reporter: true,
         assignee: true,
-        issue_status:true
+        issue_status: true,
       },
     });
 
