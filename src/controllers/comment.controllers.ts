@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 
-import { addCommentService, deleteCommentService, editCommentService,getCommentService } from "../services/comment_services.ts";
+import { addCommentService, deleteCommentService, editCommentService,getCommentService,getCommentsByUserService } from "../services/comment_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 
 export const addComment =async (req: Request, res: Response, next: NextFunction) => {
@@ -57,3 +57,12 @@ export const getComment =async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+export const getUserComments =async (req: Request, res: Response, next: NextFunction) => {
+  try { 
+    const userId=req.user?.id;
+    const result=await getCommentsByUserService(userId as string);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -146,10 +146,7 @@ export async function createIssueService(
         message: `You have been assigned to ticket, ${title}`,
       });
       await manager.save(Notifications, notificationCreation);
-      sendNotificationToUser(
-        notificationCreation.reciever.id,
-        `You have been assigned to ticket, ${title}`,
-      );
+      sendNotificationToUser(assignee_id,notificationCreation);
       return {
         issueCreated: true,
         message: "Issue created successfully",
@@ -279,7 +276,7 @@ export async function editIssueService(
         } as ProjectStatuses;
       }
       if (due_date !== undefined) updates.issue_due_date = due_date as Date;
-      if (start_date !== undefined)
+      if (start_date)
         updates.issue_start_date = start_date as Date;
       if (assignee_id !== undefined) {
         updates.assignee = { id: assignee_id } as Users;
