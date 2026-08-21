@@ -9,7 +9,6 @@ import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
 import { Designation } from "./entities/Designation.tsx";
 import { AppDataSource } from "./db.ts";
 
-
 export const projectRepo = AppDataSource.getRepository(Projects);
 export const usersRepo = AppDataSource.getRepository(Users);
 export const notifyRepo = AppDataSource.getRepository(Notifications);
@@ -19,5 +18,3 @@ export const issueRepo = AppDataSource.getRepository(Issues);
 export const roleRepository = AppDataSource.getRepository(Role);
 export const statusRepository = AppDataSource.getRepository(ProjectStatuses);
 export const designationRepository = AppDataSource.getRepository(Designation);
-
-

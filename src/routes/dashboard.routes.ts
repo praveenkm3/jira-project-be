@@ -1,14 +1,16 @@
 import { Router } from "express";
-import { getProgressCounts,getStatusCounts ,getPriorityCounts,getTypeCounts} from "../controllers/dashboard.controllers.ts";
+import {
+  getProgressCounts,
+  getStatusCounts,
+  getPriorityCounts,
+  getTypeCounts,
+} from "../controllers/dashboard.controllers.ts";
 
+const boardRouter = Router();
 
-const boardRouter=Router();
-
-boardRouter.get('/progress-counts',getProgressCounts);
-boardRouter.get('/status-counts',getStatusCounts);
-boardRouter.get('/priority-counts',getPriorityCounts);
-boardRouter.get('/type-counts',getTypeCounts);
-
-
+boardRouter.get("/progress-counts", getProgressCounts);
+boardRouter.get("/status-counts", getStatusCounts);
+boardRouter.get("/priority-counts", getPriorityCounts);
+boardRouter.get("/type-counts", getTypeCounts);
 
 export default boardRouter;

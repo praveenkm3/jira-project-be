@@ -13,23 +13,20 @@ export async function checkProjectAdmin(
   }
 
   if (user.role !== "admin") {
-    throw new AppError(
-      403,
-      "Developers are not allowed to modify project",
-    );
+    throw new AppError(403, "Developers are not allowed to modify project");
   }
 
   const { pid } = req.params;
 
   const project = await projectRepo
-  .createQueryBuilder("project")
-  .innerJoin("project.members", "member")
-  .innerJoin("member.user", "memberUser")
-  .innerJoin("memberUser.role", "role")
-  .where("project.project_id = :pid", { pid })
-  .andWhere("memberUser.id = :userId", { userId: user.id })
-  .andWhere("role.role_name = :role", { role: "admin" })
-  .getOne();
+    .createQueryBuilder("project")
+    .innerJoin("project.members", "member")
+    .innerJoin("member.user", "memberUser")
+    .innerJoin("memberUser.role", "role")
+    .where("project.project_id = :pid", { pid })
+    .andWhere("memberUser.id = :userId", { userId: user.id })
+    .andWhere("role.role_name = :role", { role: "admin" })
+    .getOne();
 
   if (!project) {
     throw new AppError(

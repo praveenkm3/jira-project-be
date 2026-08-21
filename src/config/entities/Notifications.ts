@@ -35,10 +35,10 @@ export class Notifications {
   @JoinColumn({ name: "reciever_id" })
   reciever!: Users;
 
-  @Column({ type:"boolean", name: "is_read"})
+  @Column({ type: "boolean", name: "is_read" })
   is_read!: boolean;
 
-  @Column({ type: "text", name: "message"})
+  @Column({ type: "text", name: "message" })
   message!: string;
 
   @CreateDateColumn({

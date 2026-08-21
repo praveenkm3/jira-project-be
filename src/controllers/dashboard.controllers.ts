@@ -3,11 +3,9 @@ import {
   progressCountServices,
   statusCountServices,
   priorityCountServices,
-  typeCountServices
+  typeCountServices,
 } from "../services/dashboard_services.ts";
-import type {
-  progressCountType, 
-} from "../types/boards.types.ts";
+import type { progressCountType } from "../types/boards.types.ts";
 
 export const getProgressCounts = async (
   req: Request,
@@ -19,7 +17,7 @@ export const getProgressCounts = async (
     const role = req.user?.role;
     const response: progressCountType = await progressCountServices(
       userId as string,
-      role as string
+      role as string,
     );
     return res.status(200).json(response);
   } catch (error) {
@@ -33,8 +31,11 @@ export const getStatusCounts = async (
 ) => {
   try {
     const userId = req.user?.id;
-    const role=req.user?.role;
-    const response = await statusCountServices(userId as string,role as string);
+    const role = req.user?.role;
+    const response = await statusCountServices(
+      userId as string,
+      role as string,
+    );
     return res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -47,8 +48,11 @@ export const getPriorityCounts = async (
 ) => {
   try {
     const userId = req.user?.id;
-    const role=req.user?.role;
-    const response = await priorityCountServices(userId as string,role as string);
+    const role = req.user?.role;
+    const response = await priorityCountServices(
+      userId as string,
+      role as string,
+    );
     return res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -62,8 +66,8 @@ export const getTypeCounts = async (
 ) => {
   try {
     const userId = req.user?.id;
-    const role=req.user?.role;
-    const response = await typeCountServices(userId as string,role as string);
+    const role = req.user?.role;
+    const response = await typeCountServices(userId as string, role as string);
     return res.status(200).json(response);
   } catch (error) {
     next(error);

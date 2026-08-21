@@ -20,7 +20,8 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import {
   authenticateWebsocket,
-  addConnection,removeConnection
+  addConnection,
+  removeConnection,
 } from "./services/websocket/websocket.services.ts";
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
@@ -51,20 +52,22 @@ app.use("/api/", userRouter);
 app.use("/api/comments", commentRouter);
 app.use("/api/notifications", notifyRouter);
 app.use("/api/boards", boardRouter);
-app.use('/designations',designationRouter)
+app.use("/designations", designationRouter);
 app.use(errorHandler);
 try {
-  await AppDataSource.initialize(); 
+  await AppDataSource.initialize();
 
   const server = createServer(app);
   const web_socket = new WebSocketServer({ server });
 
   web_socket.on("connection", async (socket, request) => {
     const cookieHeader = request.headers.cookie;
-    const user_id:string = await authenticateWebsocket(cookieHeader!)as string;
+    const user_id: string = (await authenticateWebsocket(
+      cookieHeader!,
+    )) as string;
 
     addConnection(user_id, socket);
-    
+
     socket.on("close", () => {
       removeConnection(user_id);
     });

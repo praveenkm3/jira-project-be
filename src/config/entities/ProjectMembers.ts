@@ -9,8 +9,7 @@ import {
 import { Projects } from "./Projects.ts";
 import { Users } from "./Users.ts";
 
-
-@Unique("project_member",["project", "user"])
+@Unique("project_member", ["project", "user"])
 @Entity("project_members")
 export class ProjectMembers {
   @PrimaryGeneratedColumn("uuid")

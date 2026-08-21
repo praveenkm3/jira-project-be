@@ -9,7 +9,7 @@ import {
   myProjectsForSearchService,
   getAllProjectMembersService,
   specificProjectStatusesService,
-  addStatusesToProjectService
+  addStatusesToProjectService,
 } from "../services/project_services.ts";
 
 export async function createProject(
@@ -95,9 +95,13 @@ export async function getSpecificProject(
   try {
     const { pid = "" } = req.params;
     const user = req.user;
-    const role=user?.role;
-    
-    const response = await specificProjectService(user?.id as string, pid as string,role as string);
+    const role = user?.role;
+
+    const response = await specificProjectService(
+      user?.id as string,
+      pid as string,
+      role as string,
+    );
 
     return res.status(201).json(response);
   } catch (error) {
@@ -111,7 +115,10 @@ export async function getAllProjects(
 ) {
   try {
     const user = req.user;
-    const response = await allProjectsService(user?.id as string,user?.role as string);
+    const response = await allProjectsService(
+      user?.id as string,
+      user?.role as string,
+    );
     return res.status(201).json(response);
   } catch (error) {
     next(error);
@@ -135,8 +142,8 @@ export async function getAllProjectMembers(
   res: Response,
   next: NextFunction,
 ) {
-  try { 
-    const {pid=''}=req.params;
+  try {
+    const { pid = "" } = req.params;
     const response = await getAllProjectMembersService(pid as string);
     return res.status(201).json(response);
   } catch (error) {
@@ -149,9 +156,9 @@ export async function getSpecificStatusesProject(
   next: NextFunction,
 ) {
   try {
-    const { pid = "" } = req.params; 
-    
-    const response = await specificProjectStatusesService( pid as string);
+    const { pid = "" } = req.params;
+
+    const response = await specificProjectStatusesService(pid as string);
 
     return res.status(201).json(response);
   } catch (error) {
@@ -166,15 +173,17 @@ export async function addStatusesToProject(
 ) {
   try {
     const { pid = "" } = req.params;
-    const userId=req.user?.id as string;
-    const{status_name}=req.body; 
-    
-    const response = await addStatusesToProjectService( pid as string,userId,status_name);
+    const userId = req.user?.id as string;
+    const { status_name } = req.body;
+
+    const response = await addStatusesToProjectService(
+      pid as string,
+      userId,
+      status_name,
+    );
 
     return res.status(201).json(response);
   } catch (error) {
     next(error);
   }
 }
-
-

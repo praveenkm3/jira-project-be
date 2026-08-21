@@ -16,20 +16,20 @@ export function encryptToken(token: string) {
     return "Tokens Invalid";
   }
 }
-export function decryptToken(cookieValue:any) {
-    try {
-      const [ivHex, authTagHex, encryptedHex] = cookieValue.split(':');
-    
-    const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
+export function decryptToken(cookieValue: any) {
+  try {
+    const [ivHex, authTagHex, encryptedHex] = cookieValue.split(":");
+
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
     const decipher = crypto.createDecipheriv(ALGORITHM, CookieSecretKey, iv);
-    
+
     decipher.setAuthTag(authTag);
-    
-    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted; 
-    } catch {
-      return "Tokens Invalid";
-    }
+
+    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  } catch {
+    return "Tokens Invalid";
+  }
 }

@@ -1,4 +1,4 @@
-import { AppError } from "../middlewares/errorMiddleware.ts"; 
+import { AppError } from "../middlewares/errorMiddleware.ts";
 import { usersRepo } from "../config/repos.ts";
 import type { usersReturnType } from "../types/user.types.ts";
 
@@ -16,7 +16,7 @@ export const getUsersService = async (userId: string) => {
       .where("user.id != :uid", { uid: userId })
       .getRawMany();
     return result;
-  } catch{
+  } catch {
     throw new AppError(404, "users not found");
   }
 };

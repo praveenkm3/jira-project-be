@@ -7,10 +7,10 @@ export async function addDesignationService(
 ) {
   try {
     const user = await usersRepo.findOne({
-      where: { id: user_id }, 
-      relations:{
-        role:true
-      }
+      where: { id: user_id },
+      relations: {
+        role: true,
+      },
     });
 
     if (!user) {
@@ -18,13 +18,10 @@ export async function addDesignationService(
     }
 
     if (user.role.role_name !== "admin") {
-      throw new AppError(
-        403,
-        "Only admins can create designations",
-      );
+      throw new AppError(403, "Only admins can create designations");
     }
-    if(!designation_name){
-        throw new AppError(409, "Designation  Required");
+    if (!designation_name) {
+      throw new AppError(409, "Designation  Required");
     }
 
     const existingDesignation = await designationRepository.findOne({

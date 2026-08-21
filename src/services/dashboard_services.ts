@@ -11,7 +11,7 @@ export const progressCountServices = async (userId: string, role: string) => {
 
     let query1;
     if (role !== "admin") {
-      query1=await issueRepo.count({
+      query1 = await issueRepo.count({
         where: [
           {
             updatedAt: MoreThanOrEqual(sevenDaysAgo),
@@ -21,14 +21,14 @@ export const progressCountServices = async (userId: string, role: string) => {
           },
         ],
       });
-    }else{
-      query1=await projectMemberRepo
-      .createQueryBuilder("projectMember")
-      .innerJoin("projectMember.user","user")
-      .innerJoin("user.role","role")
-      .where("role.role_name = :user_role",{user_role:"admin"})
-      .andWhere("user.id = :userId", { userId })
-      .getCount()
+    } else {
+      query1 = await projectMemberRepo
+        .createQueryBuilder("projectMember")
+        .innerJoin("projectMember.user", "user")
+        .innerJoin("user.role", "role")
+        .where("role.role_name = :user_role", { user_role: "admin" })
+        .andWhere("user.id = :userId", { userId })
+        .getCount();
     }
     const query2 = await issueRepo.count({
       where: {

@@ -2,7 +2,7 @@ import type { insertedDataType } from "../types/members.types.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
 import { projectMemberRepo } from "../config/repos.ts";
 import { ProjectMembers } from "../config/entities/ProjectMembers.ts";
-import { AppDataSource } from "../config/db.ts"; 
+import { AppDataSource } from "../config/db.ts";
 import { Issues } from "../config/entities/Issues.ts";
 
 export async function addMembersToProjectService(
@@ -72,48 +72,43 @@ export async function deleteMembersFromProjectService(
 export async function editProjectMembersService(
   userIds: string[],
   projectId: string,
-  userId:string
+  userId: string,
 ) {
   try {
-    const usersToRemove = userIds.filter(
-        (id) => id !== userId
-      );
-      if (!usersToRemove.length) {
-        return {
-          updated: false,
-          message: "No members selected",
-        };
-      }
-    const result= await AppDataSource.transaction(async (manager) => {
-    await manager
-      .createQueryBuilder()
-      .update(Issues)
-      .set({ assignee: null })
-      .where("project_id = :projectId", { projectId })
-      .andWhere("assignee_id IN (:...usersToRemove)", { usersToRemove })
-      .execute();
+    const usersToRemove = userIds.filter((id) => id !== userId);
+    if (!usersToRemove.length) {
+      return {
+        updated: false,
+        message: "No members selected",
+      };
+    }
+    const result = await AppDataSource.transaction(async (manager) => {
+      await manager
+        .createQueryBuilder()
+        .update(Issues)
+        .set({ assignee: null })
+        .where("project_id = :projectId", { projectId })
+        .andWhere("assignee_id IN (:...usersToRemove)", { usersToRemove })
+        .execute();
 
-    await manager
-      .createQueryBuilder()
-      .delete()
-      .from(ProjectMembers)
-      .where("project_id = :projectId", { projectId })
-      .andWhere("member_id IN (:...usersToRemove)", { usersToRemove })
-      .execute();
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from(ProjectMembers)
+        .where("project_id = :projectId", { projectId })
+        .andWhere("member_id IN (:...usersToRemove)", { usersToRemove })
+        .execute();
 
-    return {
-      updated: true,
-      message: "Project members removed successfully",
-    };
-  });
-  return result;
+      return {
+        updated: true,
+        message: "Project members removed successfully",
+      };
+    });
+    return result;
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
     }
-    throw new AppError(
-      500,
-      "DB Error ,while removing project members",
-    ); 
+    throw new AppError(500, "DB Error ,while removing project members");
   }
 }

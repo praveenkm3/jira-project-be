@@ -1,6 +1,6 @@
 import type { WebSocket } from "ws";
 import { decryptToken } from "../../utils/hashCookie.ts";
-import { validateAccessToken } from "../../utils/tokens.ts";  
+import { validateAccessToken } from "../../utils/tokens.ts";
 
 const userSockets = new Map<string, WebSocket>();
 
@@ -38,7 +38,7 @@ export function sendNotificationToUser(
     message: string;
     is_read: boolean;
     createdAt: Date;
-  }
+  },
 ) {
   const socket = getConnections(userId);
 
@@ -49,6 +49,6 @@ export function sendNotificationToUser(
     JSON.stringify({
       type: "NEW_NOTIFICATION",
       notification,
-    })
+    }),
   );
 }

@@ -1,6 +1,5 @@
 import { IssuePriority } from "../config/entities/Issues.ts";
 
-
 export type issueCreatetype = {
   projectId: string;
   title: string;
@@ -10,16 +9,15 @@ export type issueCreatetype = {
   assignee_id: string;
   due_date: Date;
   start_date?: Date;
-  status_id:string
+  status_id: string;
 };
 
-export type notifyType={
-  notification_id:string,
-  is_read:boolean,
-  message:string,
-  createdAt:string
-
-}
+export type notifyType = {
+  notification_id: string;
+  is_read: boolean;
+  message: string;
+  createdAt: string;
+};
 type Issue = {
   issue_id: string;
   issue_number: number;

@@ -146,7 +146,7 @@ export async function createIssueService(
         message: `You have been assigned to ticket, ${title}`,
       });
       await manager.save(Notifications, notificationCreation);
-      sendNotificationToUser(assignee_id,notificationCreation);
+      sendNotificationToUser(assignee_id, notificationCreation);
       return {
         issueCreated: true,
         message: "Issue created successfully",
@@ -276,8 +276,7 @@ export async function editIssueService(
         } as ProjectStatuses;
       }
       if (due_date !== undefined) updates.issue_due_date = due_date as Date;
-      if (start_date)
-        updates.issue_start_date = start_date as Date;
+      if (start_date) updates.issue_start_date = start_date as Date;
       if (assignee_id !== undefined) {
         updates.assignee = { id: assignee_id } as Users;
       }
@@ -364,12 +363,11 @@ export async function getIssueService(userId: string, search: string) {
     }
 
     return result;
-  } catch (error) { 
+  } catch (error) {
     if (error instanceof AppError) {
       throw error;
     }
     throw new AppError(500, "DB Error ,Issue fetching failed");
-  
   }
 }
 export async function changeIssueStatusService(
@@ -499,7 +497,7 @@ export async function getProjectMembersService(
         "user.name AS name",
         "user.email AS email",
         "role.role_name AS role",
-        "designation.designation_name AS designation"
+        "designation.designation_name AS designation",
       ])
       .getRawMany();
     return result;

@@ -1,10 +1,17 @@
 import type { Request, Response, NextFunction } from "express";
-import { getDesignationService, registerService } from "../services/auth_services.ts";
+import {
+  getDesignationService,
+  registerService,
+} from "../services/auth_services.ts";
 import { AppError } from "../middlewares/errorMiddleware.ts";
-import { loginService ,getRoleService} from "../services/auth_services.ts";
+import { loginService, getRoleService } from "../services/auth_services.ts";
 import "dotenv/config";
 import { decryptToken, encryptToken } from "../utils/hashCookie.ts";
-import { generateAccessToken, validateAccessToken, validateRefreshToken } from "../utils/tokens.ts";
+import {
+  generateAccessToken,
+  validateAccessToken,
+  validateRefreshToken,
+} from "../utils/tokens.ts";
 import type { tokenObject } from "../types/auth.types.ts";
 
 export async function register(
@@ -67,15 +74,14 @@ export async function logout(req: Request, res: Response) {
 export async function refresh(req: Request, res: Response) {
   const accessToken = req?.cookies?.accessToken;
   const refreshToken = req?.cookies?.refreshToken;
-  const accessTokenDecrypt=decryptToken(accessToken);
+  const accessTokenDecrypt = decryptToken(accessToken);
   const verifyAccess = validateAccessToken(accessTokenDecrypt);
   if (verifyAccess[0]) {
     return res.status(201).json(verifyAccess[1]);
   } else {
-  const refreshTokenDecrypt=decryptToken(refreshToken);
+    const refreshTokenDecrypt = decryptToken(refreshToken);
     const verifyRefresh = validateRefreshToken(refreshTokenDecrypt);
     if (verifyRefresh[0]) {
-
       const payload = verifyRefresh[1];
       const newAccess = await generateAccessToken(payload as tokenObject);
       const accessTokenEncrypt = encryptToken(newAccess);
@@ -83,7 +89,7 @@ export async function refresh(req: Request, res: Response) {
         httpOnly: true,
         maxAge: 15 * 60 * 1000,
       });
-      
+
       return res.status(201).json(payload);
     } else {
       return res.status(401).json({ message: "Tokens Expired" });
@@ -95,7 +101,7 @@ export async function getRoles(
   res: Response,
   next: NextFunction,
 ) {
-  try {  
+  try {
     const response = await getRoleService();
     return res.status(201).json(response);
   } catch (error) {
@@ -107,7 +113,7 @@ export async function getDesignations(
   res: Response,
   next: NextFunction,
 ) {
-  try {  
+  try {
     const response = await getDesignationService();
     return res.status(201).json(response);
   } catch (error) {
