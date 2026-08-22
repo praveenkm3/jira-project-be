@@ -13,7 +13,7 @@ export async function checkProjectAdmin(
   }
 
   if (user.role !== "admin") {
-    throw new AppError(403, "Developers are not allowed to modify project");
+    throw new AppError(403, "Only Admins are allowed to modify project");
   }
 
   const { pid } = req.params;
