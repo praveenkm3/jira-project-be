@@ -2,7 +2,7 @@
 
 1. After connecting with Postgres, run migrations:
    ```bash
-   npm run migrate
+   npm run migration:run
    ```
 
 2. Create users based on:
