@@ -41,7 +41,7 @@ export class Issues {
   @Column({
     type: "varchar",
     length: 200,
-    unique: true,
+    unique: false,
   })
   issue_title!: string;
 
