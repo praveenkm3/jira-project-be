@@ -9,7 +9,7 @@ import { ProjectMembers } from "./entities/ProjectMembers.ts";
 import { Issues } from "./entities/Issues.ts";
 import { Role } from "./entities/Roles.ts";
 import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
-import { Designation } from "./entities/Designation.tsx";
+import { Designation } from "./entities/Designation.ts";
 
 const DB_USER = process.env.DB_USER;
 const DB_HOST = process.env.DB_HOST;

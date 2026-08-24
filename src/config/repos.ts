@@ -6,7 +6,7 @@ import { ProjectMembers } from "./entities/ProjectMembers.ts";
 import { Issues } from "./entities/Issues.ts";
 import { Role } from "./entities/Roles.ts";
 import { ProjectStatuses } from "./entities/ProjectStatuses.ts";
-import { Designation } from "./entities/Designation.tsx";
+import { Designation } from "./entities/Designation.ts";
 import { AppDataSource } from "./db.ts";
 
 export const projectRepo = AppDataSource.getRepository(Projects);
