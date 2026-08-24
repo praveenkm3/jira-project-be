@@ -11,7 +11,7 @@ import {
 import { Role } from "./Roles.ts";
 import { Projects } from "./Projects.ts";
 import { ProjectMembers } from "./ProjectMembers.ts";
-import { Designation } from "./Designation.tsx";
+import { Designation } from "./Designation.ts";
 export enum UserStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
